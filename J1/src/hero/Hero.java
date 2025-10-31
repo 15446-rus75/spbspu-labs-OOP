@@ -1,6 +1,6 @@
 package hero;
 
-import stratey;
+import strategy.*;
 
 public class Hero
 {

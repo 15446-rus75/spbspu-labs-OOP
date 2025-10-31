@@ -1,6 +1,6 @@
 package strategy;
 
-public class FlyStrategy
+public class FlyStrategy implements MoveStrategy
 {
   @Override
   public void move()

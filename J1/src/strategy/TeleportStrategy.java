@@ -1,6 +1,6 @@
 package strategy;
 
-public class TeleportStrategy
+public class TeleportStrategy implements MoveStrategy
 {
   @Override
   public void move()
