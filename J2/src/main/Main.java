@@ -6,7 +6,7 @@ import java.util.List;
 
 import annot.*;
 
-public class MethodCaller
+public class Main
 {
   public static void main(String[] args) throws Exception
   {
