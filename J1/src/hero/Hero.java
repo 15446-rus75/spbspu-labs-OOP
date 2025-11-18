@@ -27,7 +27,6 @@ public class Hero
   public void setMoveStrategy(MoveStrategy moveStrategy)
   {
     this.strategy = moveStrategy;
-    System.out.println("Hero has changed his MoveStrategy\n");
   }
 
   public String getName()
