@@ -22,7 +22,7 @@ public class Main
         int calls = annotation.value();
         method.setAccessible(true);
         Class<?>[] paramTypes = method.getParameterTypes();
-        System.out.println(method.getName() + " - " + calls + " вызов(ов):");
+        System.out.println(method.getName() + " - " + calls);
         for (int i = 0; i < calls; i++)
         {
           Object[] arguments = createArguments(paramTypes, i);

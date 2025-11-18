@@ -7,19 +7,19 @@ public class TestClass
   @RepeatCall(2)
   public void publicMethod1(String text)
   {
-    System.out.println("Public 1: " + text);
+    System.out.println(text);
   }
 
   @RepeatCall(3)
   public void publicMethod2(int a, int b)
   {
-    System.out.println("Public 2: " + a + " + " + b + " = " + (a + b));
+    System.out.println(a + " + " + b + " = " + (a + b));
   }
 
   @RepeatCall(1)
   public String publicMethod3(boolean flag)
   {
-    String result = "Public 3: flag = " + flag;
+    String result = "flag = " + flag;
     System.out.println(result);
     return result;
   }
@@ -27,34 +27,34 @@ public class TestClass
   @RepeatCall(4)
   protected void protectedMethod1(double value)
   {
-    System.out.println("Protected 1: " + value);
+    System.out.println(value);
   }
 
   @RepeatCall(2)
   protected int protectedMethod2(String text, int multiplier)
   {
     int result = text.length() * multiplier;
-    System.out.println("Protected 2: '" + text + "' * " + multiplier + " = " + result);
+    System.out.println(text + " * " + multiplier + " = " + result);
     return result;
   }
 
   @RepeatCall(1)
   protected void protectedMethod3(List< String > list)
   {
-    System.out.println("Protected 3: list size = " + list.size());
+    System.out.println("list size = " + list.size());
   }
 
   @RepeatCall(3)
   private void privateMethod1(long number)
   {
-    System.out.println("Private 1: " + number);
+    System.out.println(number);
   }
 
   @RepeatCall(2)
   private boolean privateMethod2(String a, String b)
   {
     boolean result = a.equals(b);
-    System.out.println("Private 2: '" + a + "' == '" + b + "' = " + result);
+    System.out.println(a + " == " + b + " = " + result);
     return result;
   }
 
@@ -62,7 +62,7 @@ public class TestClass
   private double privateMethod3(int x, int y, double z)
   {
     double result = (x + y) * z;
-    System.out.println("Private 3: (" + x + " + " + y + ") * " + z + " = " + result);
+    System.out.println("(" + x + " + " + y + ") * " + z + " = " + result);
     return result;
   }
 
