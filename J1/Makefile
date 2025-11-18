@@ -22,6 +22,6 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 run: all
-	@$(JAVA) -cp $(BUILD_DIR) $(MAIN_CLASS)
+	@$(JAVA) -cp $(BUILD_DIR) $(MAIN_CLASS) $(ARGS)
 
 .PHONY: all clean run
