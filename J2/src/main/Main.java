@@ -2,10 +2,6 @@ package main;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -95,18 +91,6 @@ public class Main
     {
       return Arrays.asList("элемент1_" + callIndex, "элемент2_" + paramIndex, "элемент3");
     }
-    else if (type.getName().contains("Optional"))
-    {
-      try
-      {
-        Object value = createInstance(String.class, callIndex, paramIndex);
-        return type.getMethod("of", Object.class).invoke(null, value);
-      }
-      catch (Exception e)
-      {
-        return null;
-      }
-    }
     else if (!type.isPrimitive() && !type.isInterface())
     {
       try
@@ -148,5 +132,4 @@ public class Main
     catch (Exception e)
     {}
   }
-
 }
