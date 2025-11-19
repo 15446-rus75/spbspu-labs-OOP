@@ -11,7 +11,7 @@ public class Main
   {
     if (args.length == 0)
     {
-      System.out.println("Пожалуйста, укажите имя героя в аргументах командной строки");
+      System.out.println("Укажите имя героя в аргументах командной строки");
       return;
     }
     String heroName = args[0];
@@ -48,7 +48,6 @@ public class Main
           System.out.println("Неизвестная стратегия: " + input);
           break;
       }
-      System.out.println("Введите следующую стратегию или 'exit' для выхода:");
     }
     scanner.close();
   }
