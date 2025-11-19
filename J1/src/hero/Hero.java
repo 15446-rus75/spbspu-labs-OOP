@@ -26,6 +26,10 @@ public class Hero
 
   public void setMoveStrategy(MoveStrategy moveStrategy)
   {
+    if (moveStrategy == null)
+    {
+      return;
+    }
     this.strategy = moveStrategy;
   }
 
