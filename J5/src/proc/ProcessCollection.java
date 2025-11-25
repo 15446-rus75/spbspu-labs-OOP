@@ -1,4 +1,4 @@
-package stream_demo;
+package proc;
 
 import java.util.*;
 import java.util.function.Function;
