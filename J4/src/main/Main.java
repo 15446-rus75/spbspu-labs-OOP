@@ -1,6 +1,8 @@
-package translator;
+package main;
 
+import translator.*;
 import translator.exceptions.*;
+
 
 import java.util.Scanner;
 import java.util.TreeMap;
