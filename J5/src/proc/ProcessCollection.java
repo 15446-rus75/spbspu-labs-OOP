@@ -53,7 +53,7 @@ public class ProcessCollection
                   .filter(str -> str != null && !str.isEmpty() && str.charAt(0) == startingLetter)
                   .sorted()
                   .collect(Collectors.toList());
-    }
+  }
 
   public static <T> T getLastElement(Collection<T> collection)
   {
@@ -64,5 +64,16 @@ public class ProcessCollection
     return collection.stream()
                      .reduce((first, second) -> second)
                      .orElseThrow(() -> new NoSuchElementException("Collection is empty"));
+  }
+
+  public static int sumOfEvenNumbers(int[] numbers)
+  {
+    if (numbers == null)
+    {
+      throw new IllegalArgumentException("Массив чисел не может быть null");
     }
+    return Arrays.stream(numbers)
+                 .filter(n -> n % 2 == 0)
+                 .sum();
+  }
 }
