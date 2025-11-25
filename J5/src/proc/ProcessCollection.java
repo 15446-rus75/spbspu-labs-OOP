@@ -54,4 +54,15 @@ public class ProcessCollection
                   .sorted()
                   .collect(Collectors.toList());
     }
+
+  public static <T> T getLastElement(Collection<T> collection)
+  {
+    if (collection == null)
+    {
+      throw new IllegalArgumentException("Коллекция не может быть null");
+    }
+    return collection.stream()
+                     .reduce((first, second) -> second)
+                     .orElseThrow(() -> new NoSuchElementException("Collection is empty"));
+    }
 }
