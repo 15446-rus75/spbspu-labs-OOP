@@ -42,4 +42,16 @@ public class ProcessCollection
                   .map(entry -> entry.getKey() * entry.getKey())
                   .collect(Collectors.toList());
    }
+
+  public static List<String> filterAndSort(Collection<String> strings, char startingLetter)
+  {
+    if (strings == null)
+    {
+      throw new IllegalArgumentException("Коллекция строк не может быть null");
+    }
+    return strings.stream()
+                  .filter(str -> str != null && !str.isEmpty() && str.charAt(0) == startingLetter)
+                  .sorted()
+                  .collect(Collectors.toList());
+    }
 }
