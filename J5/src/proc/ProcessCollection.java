@@ -76,4 +76,19 @@ public class ProcessCollection
                  .filter(n -> n % 2 == 0)
                  .sum();
   }
+
+  public static Map<Character, String> stringsToMap(List<String> strings) 
+  {
+    if (strings == null) 
+    {
+      throw new IllegalArgumentException("Список строк не может быть null");
+    }
+    return strings.stream()
+                  .filter(str -> str != null && !str.isEmpty())
+                  .collect(Collectors.toMap(
+                        str -> str.charAt(0),
+                        str -> str.length() > 1 ? str.substring(1) : "",
+                        (existing, replacement) -> existing
+                ));
+  }
 }
