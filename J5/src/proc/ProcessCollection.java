@@ -16,4 +16,14 @@ public class ProcessCollection
            .mapToInt(Integer::intValue)
            .average();
   }
+
+  public static List<String> toUpperCaseWithPrefix(List<String> strings) {
+  if (strings == null)
+  {
+    throw new IllegalArgumentException("Список строк не может быть null");
+  }
+  return strings.stream()
+                .map(str -> "_new_" + str.toUpperCase())
+                .collect(Collectors.toList());
+  }
 }
