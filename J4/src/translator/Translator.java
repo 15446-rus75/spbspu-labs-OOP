@@ -3,67 +3,40 @@ package translator;
 import translator.exceptions.*;
 
 import java.util.TreeMap;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.util.Map;
-import java.util.regex.Pattern;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class Translator
 {
-  private TreeMap< String, String > dictionary;
-
-  public Translator(TreeMap< String, String > dict)
+  public static void translate(String fileName, TreeMap<String, String> dictionary)
+          throws FileReadException
   {
-    if (dict == null)
-    {
-      throw new IllegalArgumentException("null-аргумент в конструкторе");
-    }
-    dictionary = dict;
-  }
-
-  public void translate(String fileName) throws FileReadException
-  {
-    FileReader file;
+    Scanner scanner;
     try
     {
-      file = new FileReader(fileName);
+      scanner = new Scanner(new File(fileName));
     }
-    catch(FileNotFoundException e)
+    catch (FileNotFoundException e)
     {
-      throw new FileReadException(e.getMessage());
-    }
-    BufferedReader reader = new BufferedReader(file);
-    String str;
-    try
-    {
-      str = reader.readLine();
-    }
-    catch (IOException e)
-    {
-      throw new FileReadException(e.getMessage());
+      throw new FileReadException("Unable to open file: " + e.getMessage());
     }
 
-    while (str != null)
+    while (scanner.hasNextLine())
     {
-      for (Map.Entry< String, String > entry : dictionary.entrySet())
+      String str = scanner.nextLine();
+
+      for (Map.Entry<String, String> entry : dictionary.entrySet())
       {
         String word = entry.getKey().toLowerCase();
         if (str.toLowerCase().contains(word))
         {
-          str = str.replaceAll("(?i)" + Pattern.quote(word), entry.getValue());
+          str = str.replaceAll("(?i)" + word + "\\b", entry.getValue());
         }
       }
       System.out.println(str);
-      try
-      {
-        str = reader.readLine();
-      }
-      catch (IOException e)
-      {
-        throw new FileReadException(e.getMessage());
-      }
     }
+    scanner.close();
   }
 }
