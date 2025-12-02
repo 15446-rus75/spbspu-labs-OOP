@@ -2,6 +2,8 @@ package main;
 
 import translator.exceptions.*;
 
+import translator.*;
+
 import java.util.TreeMap;
 
 public class Main
@@ -10,8 +12,8 @@ public class Main
   {
     try
     {
-      TreeMap<String, String> dictionary = Dictionary.loadFromFile("src/translator/dict");
-      Translator.translate("src/translator/book", dictionary);
+      TreeMap<String, String> dictionary = Dictionary.loadFromFile("src/translator/dict.txt");
+      Translator.translate("src/translator/text.txt", dictionary);
     }
     catch (Exception e)
     {

@@ -22,7 +22,8 @@ public class Dictionary
     try
     {
       scan = new Scanner(new File(filePath));
-    } catch (FileNotFoundException e)
+    }
+    catch (FileNotFoundException e)
     {
       throw new FileReadException("Unable to open file: " + e.getMessage());
     }
@@ -30,7 +31,7 @@ public class Dictionary
     while (scan.hasNextLine())
     {
       String line = scan.nextLine();
-      String[] words = line.split("_");
+      String[] words = line.split("|");
 
       if (words.length != 2)
       {
