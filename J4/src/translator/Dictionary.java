@@ -31,7 +31,7 @@ public class Dictionary
     while (scan.hasNextLine())
     {
       String line = scan.nextLine();
-      String[] words = line.split("|");
+      String[] words = line.split("\\|");
 
       if (words.length != 2)
       {
