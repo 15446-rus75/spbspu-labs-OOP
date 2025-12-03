@@ -7,6 +7,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 
 import annot.*;
 
@@ -106,23 +108,72 @@ public class Main
     {
       return Arrays.asList("элемент1_" + callIndex, "элемент2_" + paramIndex, "элемент3");
     }
+    else if (type.isArray())
+    {
+      return createArrayInstance(type, callIndex, paramIndex);
+    }
     else if (!type.isPrimitive() && !type.isInterface())
     {
       try
       {
-        Object instance = type.getDeclaredConstructor().newInstance();
+        return createObjectInstance(type, callIndex, paramIndex);
+      }
+      catch (Exception e)
+      {
+        System.err.println("Не удалось создать объект типа " + type.getName() + ": " + e.getMessage());
+        return null;
+      }
+    }
+    else if (type.isEnum())
+    {
+      Object[] enumConstants = type.getEnumConstants();
+      if (enumConstants != null && enumConstants.length > 0)
+      {
+        return enumConstants[(callIndex + paramIndex) % enumConstants.length];
+      }
+    }
+    return null;
+  }
+
+  private static Object createObjectInstance(Class<?> type, int callIndex, int paramIndex) throws Exception
+  {
+    Constructor<?>[] constructors = type.getDeclaredConstructors();
+    Arrays.sort(constructors, (c1, c2) ->
+        Integer.compare(c1.getParameterCount(), c2.getParameterCount()));
+    for (Constructor<?> constructor : constructors)
+    {
+      try
+      {
+        constructor.setAccessible(true);
+        Class<?>[] paramTypes = constructor.getParameterTypes();
+        Object[] params = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++)
+        {
+          params[i] = createInstance(paramTypes[i], callIndex, paramIndex + i);
+        }
+        Object instance = constructor.newInstance(params);
         populateFields(instance, callIndex, paramIndex);
         return instance;
       }
       catch (Exception e)
       {
-        return null;
+        continue;
       }
     }
-    else
+    throw new InstantiationException("Не найден подходящий конструктор для класса " + type.getName());
+  }
+
+  private static Object createArrayInstance(Class<?> arrayType, int callIndex, int paramIndex)
+  {
+    Class<?> componentType = arrayType.getComponentType();
+    int length = Math.max(1, (callIndex + paramIndex) % 5 + 1);
+    Object array = Array.newInstance(componentType, length);
+    for (int i = 0; i < length; i++)
     {
-      return null;
+      Object element = createInstance(componentType, callIndex, paramIndex + i);
+      Array.set(array, i, element);
     }
+    return array;
   }
 
   private static void populateFields(Object instance, int callIndex, int paramIndex) throws Exception
@@ -130,7 +181,7 @@ public class Main
     Field[] fields = instance.getClass().getDeclaredFields();
     for (Field field : fields)
     {
-      if (java.lang.reflect.Modifier.isStatic(field.getModifiers()))
+      if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers()))
       {
         continue;
       }
@@ -138,7 +189,14 @@ public class Main
       Object value = createInstance(field.getType(), callIndex, paramIndex);
       if (value != null)
       {
-        field.set(instance, value);
+        try
+        {
+          field.set(instance, value);
+        }
+        catch (Exception e)
+        {
+          System.err.println("Не удалось установить поле " + field.getName() + ": " + e.getMessage());
+        }
       }
     }
   }
