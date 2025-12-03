@@ -5,6 +5,7 @@ import java.util.List;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
 import annot.*;
@@ -21,6 +22,11 @@ public class Main
       Method[] methods = clazz.getDeclaredMethods();
       for (Method method : methods)
       {
+        int mod = method.getModifiers();
+        if (Modifier.isPublic(mod))
+        {
+          continue;
+        }
         if (method.isAnnotationPresent(RepeatCall.class))
         {
           RepeatCall annotation = method.getAnnotation(RepeatCall.class);
@@ -44,6 +50,7 @@ public class Main
     catch (IllegalAccessException | InvocationTargetException e)
     {
       System.out.println("Something went wrong");
+      System.out.println(e.getMessage());
     }
   }
 
