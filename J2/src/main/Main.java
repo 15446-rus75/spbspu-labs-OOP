@@ -5,37 +5,45 @@ import java.util.List;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import annot.*;
 
 public class Main
 {
-  public static void main(String[] args) throws Exception
+  public static void main(String[] args)
   {
-    TestClass obj = new TestClass();
-    Class<?> clazz = obj.getClass();
-    System.out.println("=== ВЫЗОВ АННОТИРОВАННЫХ МЕТОДОВ ===\n");
-    Method[] methods = clazz.getDeclaredMethods();
-    for (Method method : methods)
+    try
     {
-      if (method.isAnnotationPresent(RepeatCall.class))
+      TestClass obj = new TestClass();
+      Class<?> clazz = obj.getClass();
+      System.out.println("=== ВЫЗОВ АННОТИРОВАННЫХ МЕТОДОВ ===\n");
+      Method[] methods = clazz.getDeclaredMethods();
+      for (Method method : methods)
       {
-        RepeatCall annotation = method.getAnnotation(RepeatCall.class);
-        int calls = annotation.value();
-        method.setAccessible(true);
-        Class<?>[] paramTypes = method.getParameterTypes();
-        System.out.println(method.getName() + " - " + calls);
-        for (int i = 0; i < calls; i++)
+        if (method.isAnnotationPresent(RepeatCall.class))
         {
-          Object[] arguments = createArguments(paramTypes, i);
-          Object result = method.invoke(obj, arguments);
-            if (result != null)
-            {
-              System.out.println("  -> Результат: " + result);
-            }
+          RepeatCall annotation = method.getAnnotation(RepeatCall.class);
+          int calls = annotation.value();
+          method.setAccessible(true);
+          Class<?>[] paramTypes = method.getParameterTypes();
+          System.out.println(method.getName() + " - " + calls);
+          for (int i = 0; i < calls; i++)
+          {
+            Object[] arguments = createArguments(paramTypes, i);
+            Object result = method.invoke(obj, arguments);
+              if (result != null)
+              {
+                System.out.println("  -> Результат: " + result);
+              }
+          }
+          System.out.println();
         }
-        System.out.println();
       }
+    }
+    catch (IllegalAccessException | InvocationTargetException e)
+    {
+      System.out.println("Something went wrong");
     }
   }
 
@@ -110,26 +118,21 @@ public class Main
     }
   }
 
-  private static void populateFields(Object instance, int callIndex, int paramIndex)
+  private static void populateFields(Object instance, int callIndex, int paramIndex) throws Exception
   {
-    try
+    Field[] fields = instance.getClass().getDeclaredFields();
+    for (Field field : fields)
     {
-      Field[] fields = instance.getClass().getDeclaredFields();
-      for (Field field : fields)
+      if (java.lang.reflect.Modifier.isStatic(field.getModifiers()))
       {
-        if (java.lang.reflect.Modifier.isStatic(field.getModifiers()))
-        {
-          continue;
-        }
-        field.setAccessible(true);
-        Object value = createInstance(field.getType(), callIndex, paramIndex);
-        if (value != null)
-        {
-          field.set(instance, value);
-        }
+        continue;
+      }
+      field.setAccessible(true);
+      Object value = createInstance(field.getType(), callIndex, paramIndex);
+      if (value != null)
+      {
+        field.set(instance, value);
       }
     }
-    catch (Exception e)
-    {}
   }
 }
