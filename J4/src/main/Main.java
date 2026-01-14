@@ -12,7 +12,13 @@ public class Main
     try
     {
       Scanner scanner = new Scanner(System.in);
-      TreeMap<String, String> dictionary = Dictionary.loadFromConsole();
+      System.out.print("Введите путь к файлу со словарем: ");
+      String dictPath = scanner.nextLine().trim();
+      if (dictPath.isEmpty())
+      {
+        dictPath = "src/translator/dict.txt";
+      }
+      TreeMap<String, String> dictionary = Dictionary.loadFromFile(dictPath);
       System.out.print("Введите путь к файлу с текстом для перевода: ");
       String filePath = scanner.nextLine().trim();
       if (filePath.isEmpty())

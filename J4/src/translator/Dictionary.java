@@ -10,16 +10,23 @@ import java.util.TreeMap;
 
 public class Dictionary
 {
-  public static TreeMap<String, String> loadFromConsole()
+  public static TreeMap<String, String> loadFromFile(String filePath)
           throws FileReadException, InvalidFileFormatException
   {
 
     TreeMap<String, String> dictionary = new TreeMap<>(
             Comparator.comparing(String::length).reversed().thenComparing(Comparator.naturalOrder())
     );
-
     Scanner scan;
-    scan = new Scanner(System.in);
+    try
+    {
+      scan = new Scanner(new File(filePath));
+    }
+    catch (FileNotFoundException e)
+    {
+      throw new FileReadException("Unable to open file: " + e.getMessage());
+    }
+
     while (scan.hasNextLine())
     {
       String line = scan.nextLine();
@@ -31,7 +38,7 @@ public class Dictionary
       }
       dictionary.put(words[0], words[1]);
     }
-//    scan.close();
+    scan.close();
     return dictionary;
   }
 }
