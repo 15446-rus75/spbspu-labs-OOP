@@ -25,7 +25,7 @@ public class Main
       for (Method method : methods)
       {
         int mod = method.getModifiers();
-        if (Modifier.isPublic(mod))
+        if (!Modifier.isProtected(mod) && !Modifier.isPrivate(mod))
         {
           continue;
         }
