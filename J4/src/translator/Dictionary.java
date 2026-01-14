@@ -10,7 +10,7 @@ import java.util.TreeMap;
 
 public class Dictionary
 {
-  public static TreeMap<String, String> loadFromFile(String filePath)
+  public static TreeMap<String, String> loadFromConsole()
           throws FileReadException, InvalidFileFormatException
   {
 
