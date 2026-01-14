@@ -19,20 +19,11 @@ public class Dictionary
     );
 
     Scanner scan;
-    try
-    {
-      scan = new Scanner(new File(filePath));
-    }
-    catch (FileNotFoundException e)
-    {
-      throw new FileReadException("Unable to open file: " + e.getMessage());
-    }
-
+    scan = new Scanner(System.in);
     while (scan.hasNextLine())
     {
       String line = scan.nextLine();
-      String[] words = line.split("\\|");
-
+      String[] words = line.split("\\s*\\|\\s*");
       if (words.length != 2)
       {
         scan.close();
@@ -40,7 +31,7 @@ public class Dictionary
       }
       dictionary.put(words[0], words[1]);
     }
-    scan.close();
+//    scan.close();
     return dictionary;
   }
 }
