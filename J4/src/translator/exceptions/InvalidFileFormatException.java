@@ -1,6 +1,8 @@
 package translator.exceptions;
 
-public class InvalidFileFormatException extends Exception
+import java.io.*;
+
+public class InvalidFileFormatException extends IOException
 {
   public InvalidFileFormatException(String message)
   {
