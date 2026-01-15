@@ -25,7 +25,7 @@ public class Main
       for (Method method : methods)
       {
         int mod = method.getModifiers();
-        if (Modifier.isPublic(mod))
+        if (!Modifier.isProtected(mod) && !Modifier.isPrivate(mod))
         {
           continue;
         }
@@ -152,7 +152,6 @@ public class Main
           params[i] = createInstance(paramTypes[i], callIndex, paramIndex + i);
         }
         Object instance = constructor.newInstance(params);
-        populateFields(instance, callIndex, paramIndex);
         return instance;
       }
       catch (Exception e)
@@ -174,30 +173,5 @@ public class Main
       Array.set(array, i, element);
     }
     return array;
-  }
-
-  private static void populateFields(Object instance, int callIndex, int paramIndex) throws Exception
-  {
-    Field[] fields = instance.getClass().getDeclaredFields();
-    for (Field field : fields)
-    {
-      if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers()))
-      {
-        continue;
-      }
-      field.setAccessible(true);
-      Object value = createInstance(field.getType(), callIndex, paramIndex);
-      if (value != null)
-      {
-        try
-        {
-          field.set(instance, value);
-        }
-        catch (Exception e)
-        {
-          System.err.println("Не удалось установить поле " + field.getName() + ": " + e.getMessage());
-        }
-      }
-    }
   }
 }
