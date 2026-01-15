@@ -17,6 +17,7 @@ public class Dictionary
     TreeMap<String, String> dictionary = new TreeMap<>(
             Comparator.comparing(String::length).reversed().thenComparing(Comparator.naturalOrder())
     );
+
     Scanner scan;
     try
     {
@@ -30,7 +31,8 @@ public class Dictionary
     while (scan.hasNextLine())
     {
       String line = scan.nextLine();
-      String[] words = line.split("\\s*\\|\\s*");
+      String[] words = line.split("\\|");
+
       if (words.length != 2)
       {
         scan.close();
