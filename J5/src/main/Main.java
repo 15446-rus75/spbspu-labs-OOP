@@ -10,7 +10,8 @@ public class Main
   public static void main(String[] args)
   {
     List<Integer> numbers1 = Arrays.asList(1, 2, 3, 4, 5);
-    System.out.println("Среднее значение: " + ProcessCollection.average(numbers1));
+    OptionalDouble averageOpt = ProcessCollection.average(numbers1);
+    System.out.println("Среднее значение: " + (averageOpt.isPresent() ? averageOpt.getAsDouble() : "нет данных"));
 
     List<String> strings1 = Arrays.asList("hello", "world", "java");
     System.out.println("Строки с префиксом: " + ProcessCollection.toUpperCaseWithPrefix(strings1));
