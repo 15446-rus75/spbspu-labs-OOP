@@ -1,9 +1,10 @@
 package main;
 
 import translator.exceptions.*;
+
 import translator.*;
+
 import java.util.TreeMap;
-import java.util.Scanner;
 
 public class Main
 {
@@ -11,21 +12,8 @@ public class Main
   {
     try
     {
-      Scanner scanner = new Scanner(System.in);
-      System.out.print("Введите путь к файлу со словарем: ");
-      String dictPath = scanner.nextLine().trim();
-      if (dictPath.isEmpty())
-      {
-        dictPath = "src/translator/dict.txt";
-      }
-      TreeMap<String, String> dictionary = Dictionary.loadFromFile(dictPath);
-      System.out.print("Введите путь к файлу с текстом для перевода: ");
-      String filePath = scanner.nextLine().trim();
-      if (filePath.isEmpty())
-      {
-        filePath = "src/translator/text.txt";
-      }
-      Translator.translate(filePath, dictionary);
+      TreeMap<String, String> dictionary = Dictionary.loadFromFile("src/translator/dict.txt");
+      Translator.translate("src/translator/text.txt", dictionary);
     }
     catch (Exception e)
     {
