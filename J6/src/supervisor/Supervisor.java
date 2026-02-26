@@ -2,63 +2,75 @@ package supervisor;
 
 import program.AbstractProgram;
 
-public class Supervisor extends Thread {
-    private final AbstractProgram program;
-    private volatile boolean supervising = true;
+public class Supervisor extends Thread
+{
+  private final AbstractProgram program;
+  private volatile boolean supervising = true;
 
-    public Supervisor(AbstractProgram program) {
-        this.program = program;
-        this.setName("Supervisor"); // осмысленное имя
-    }
+  public Supervisor(AbstractProgram program)
+  {
+    this.program = program;
+    this.setName("Supervisor");
+  }
 
-    @Override
-    public void run() {
-        System.out.println("Supervisor started.");
-        while (supervising) {
-            try {
-                program.State state = program.takeState();
-                if (state == null) {
-                    System.out.println("Program terminated, supervisor exiting.");
-                    break;
-                }
-                handleState(state);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.out.println("Supervisor interrupted.");
-                break;
-            }
+  @Override
+  public void run()
+  {
+    System.out.println("Supervisor started.");
+    while (supervising)
+    {
+      try
+      {
+        program.State state = program.takeState();
+        if (state == null)
+        {
+          System.out.println("Program terminated, supervisor exiting.");
+          break;
         }
-        System.out.println("Supervisor stopped.");
+        handleState(state);
+      }
+      catch (InterruptedException e)
+      {
+        Thread.currentThread().interrupt();
+        System.out.println("Supervisor interrupted.");
+        break;
+      }
     }
+    System.out.println("Supervisor stopped.");
+  }
 
-    private void handleState(program.State state) {
-        System.out.println("Supervisor detected state: " + state);
-        switch (state) {
-            case STOPPING:
-                System.out.println("Supervisor: restarting program...");
-                program.restartProgram(); // вызовет добавление RUNNING от имени Supervisor
-                break;
-            case FATAL_ERROR:
-                System.out.println("Supervisor: fatal error, shutting down program...");
-                program.shutdown();
-                supervising = false;
-                break;
-            default:
-                // UNKNOWN и RUNNING просто логируются
-                break;
-        }
-    }
-
-    public void startProgram() {
-        program.startProgram();
-    }
-
-    public void stopProgram() {
-        program.stopProgram();
-    }
-
-    public void shutdownSupervisor() {
+  private void handleState(program.State state)
+  {
+    System.out.println("Supervisor detected state: " + state);
+    switch (state)
+    {
+      case STOPPING:
+        System.out.println("Supervisor: restarting program...");
+        program.restartProgram();
+        break;
+      case FATAL_ERROR:
+        System.out.println("Supervisor: fatal error, shutting down program...");
+        program.shutdown();
         supervising = false;
-        this.interrupt();
+        break;
+      default:
+        break;
     }
+  }
+
+  public void startProgram()
+  {
+    program.startProgram();
+  }
+
+  public void stopProgram()
+  {
+    program.stopProgram();
+  }
+
+  public void shutdownSupervisor()
+  {
+    supervising = false;
+    this.interrupt();
+  }
 }
