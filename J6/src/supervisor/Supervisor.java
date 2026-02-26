@@ -1,7 +1,7 @@
 package supervisor;
 
 import program.AbstractProgram;
-import program.State;
+// import program.State;  // импорт удалён, чтобы избежать путаницы
 
 /**
  * Супервизор – поток, наблюдающий за состояниями абстрактной программы.
@@ -22,7 +22,7 @@ public class Supervisor extends Thread {
         System.out.println("Supervisor started.");
         while (supervising) {
             try {
-                State state = program.takeState(); // блокируется до нового состояния
+                program.State state = program.takeState(); // явно указываем program.State
                 if (state == null) {
                     System.out.println("Program terminated, supervisor exiting.");
                     break;
@@ -40,7 +40,7 @@ public class Supervisor extends Thread {
     /**
      * Обрабатывает полученное состояние.
      */
-    private void handleState(State state) {
+    private void handleState(program.State state) {
         System.out.println("Supervisor detected state: " + state);
         switch (state) {
             case STOPPING:
