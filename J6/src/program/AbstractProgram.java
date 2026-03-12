@@ -8,8 +8,10 @@ public class AbstractProgram
 {
   private final List<State> stateQueue = new LinkedList<>();
   private final Thread randomChanger;
+  private final Thread workerThread;
   private volatile boolean running = true;
   private final Random random = new Random();
+  private volatile State currentState = State.UNKNOWN;
 
   public AbstractProgram()
   {
@@ -19,6 +21,11 @@ public class AbstractProgram
     randomChanger.setName("ProgramRandomChanger");
     randomChanger.setDaemon(true);
     randomChanger.start();
+
+    workerThread = new Thread(new ProgramWorker());
+    workerThread.setName("ProgramWorker");
+    workerThread.setDaemon(false);
+    workerThread.start();
   }
 
   private void addState(State state)
@@ -26,6 +33,7 @@ public class AbstractProgram
     synchronized (this)
     {
       stateQueue.add(state);
+      currentState = state;
       this.notifyAll();
     }
     System.out.println(Thread.currentThread().getName() + " [Program] State changed to: " + state);
@@ -69,6 +77,10 @@ public class AbstractProgram
   {
     running = false;
     randomChanger.interrupt();
+    if (workerThread != null)
+    {
+      workerThread.interrupt();
+    }
     synchronized (this)
     {
       this.notifyAll();
@@ -105,6 +117,44 @@ public class AbstractProgram
     {
       State[] states = {State.RUNNING, State.STOPPING, State.FATAL_ERROR};
       return states[random.nextInt(states.length)];
+    }
+  }
+
+  private class ProgramWorker implements Runnable
+  {
+    @Override
+    public void run()
+    {
+      while (running)
+      {
+        try
+        {
+          State state = currentState;
+          switch (state)
+          {
+            case RUNNING:
+              System.out.println("ProgramWorker: working...");
+              Thread.sleep(1000);
+              break;
+            case STOPPING:
+              Thread.sleep(100);
+              break;
+            case FATAL_ERROR:
+              System.out.println("ProgramWorker: fatal error detected, worker stopping.");
+              running = false;
+              break;
+            default:
+              Thread.sleep(100);
+              break;
+          }
+        }
+        catch (InterruptedException e)
+        {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+      System.out.println("ProgramWorker stopped.");
     }
   }
 }
