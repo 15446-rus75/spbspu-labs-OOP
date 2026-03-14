@@ -31,7 +31,6 @@ public class Supervisor extends Thread
       }
       catch (InterruptedException e)
       {
-        Thread.currentThread().interrupt();
         System.out.println("Supervisor interrupted.");
         break;
       }
@@ -44,17 +43,23 @@ public class Supervisor extends Thread
     System.out.println("Supervisor detected state: " + state);
     switch (state)
     {
+      case UNKNOWN:
+        System.out.println("Program is in unknown state.");
+        break;
+      case RUNNING:
+        System.out.println("Program is running normally.");
+        break;
       case STOPPING:
-        System.out.println("Supervisor: restarting program...");
+        System.out.println("Program is stopping. Supervisor will restart it.");
         program.restartProgram();
         break;
       case FATAL_ERROR:
-        System.out.println("Supervisor: fatal error, shutting down program...");
+        System.out.println("Fatal error detected. Supervisor is shutting down the program.");
         program.shutdown();
         supervising = false;
         break;
       default:
-        break;
+        System.out.println("Unhandled state");
     }
   }
 

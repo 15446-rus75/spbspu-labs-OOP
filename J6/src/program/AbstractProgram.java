@@ -115,7 +115,7 @@ public class AbstractProgram
 
     private State getRandomState()
     {
-      State[] states = {State.RUNNING, State.STOPPING, State.FATAL_ERROR};
+      State[] states = { State.RUNNING, State.STOPPING, State.FATAL_ERROR };
       return states[random.nextInt(states.length)];
     }
   }
