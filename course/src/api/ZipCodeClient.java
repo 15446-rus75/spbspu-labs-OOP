@@ -1,0 +1,50 @@
+package api;
+
+import model.ApiResponse;
+import util.HttpClientUtil;
+import util.JsonUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ZipCodeClient extends AbstractApiClient
+{
+  private static final String BASE_URL = "http://api.zippopotam.us/us/";
+
+  public ZipCodeClient(HttpClientUtil httpClient, JsonUtil jsonUtil)
+  {
+    super(httpClient, jsonUtil);
+  }
+
+  @Override
+  public String getSourceName()
+  {
+    return "zippopotam";
+  }
+
+  @Override
+  protected String buildUrl(Map<String, String> queryParams)
+  {
+    String zip = (queryParams != null && queryParams.containsKey("zip")) ? queryParams.get("zip") : "90210";
+    return BASE_URL + zip;
+  }
+
+  @Override
+  public Map<String, Object> flattenResponse(ApiResponse response)
+  {
+    Map<String, Object> flat = new HashMap<>();
+    JsonNode data = response.getData();
+    flat.put("post code", data.path("post code").asText());
+    flat.put("country", data.path("country").asText());
+    JsonNode places = data.path("places");
+    if (places.isArray() && places.size() > 0)
+    {
+      JsonNode firstPlace = places.get(0);
+      flat.put("place name", firstPlace.path("place name").asText());
+      flat.put("state", firstPlace.path("state").asText());
+      flat.put("latitude", firstPlace.path("latitude").asText());
+      flat.put("longitude", firstPlace.path("longitude").asText());
+    }
+    return flat;
+  }
+}
