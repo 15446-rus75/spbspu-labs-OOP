@@ -1,9 +1,9 @@
 package config;
 
 import api.ApiClient;
-import api.BreweryClient;
 import api.ChuckNorrisClient;
 import api.ZipCodeClient;
+import api.RandomUserClient;
 import util.HttpClientUtil;
 import util.JsonUtil;
 
@@ -22,7 +22,7 @@ public class AppConfig
     apiClients = new ArrayList<>();
     apiClients.add(new ChuckNorrisClient(httpClient, jsonUtil));
     apiClients.add(new ZipCodeClient(httpClient, jsonUtil));
-    apiClients.add(new BreweryClient(httpClient, jsonUtil));
+    apiClients.add(new RandomUserClient(httpClient, jsonUtil));
   }
 
   public List<ApiClient> getApiClients()
