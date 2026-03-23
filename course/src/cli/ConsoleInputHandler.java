@@ -28,14 +28,15 @@ public class ConsoleInputHandler
   public String readString(String prompt)
   {
     System.out.print(prompt);
-    return scanner.nextLine().trim();
+    String line = scanner.nextLine();
+    return line.trim();
   }
 
   public boolean readBoolean(String prompt)
   {
     System.out.print(prompt);
     String line = scanner.nextLine().trim().toLowerCase();
-    return line.startsWith("y") || line.startsWith("д");
+    return line.startsWith("y") || line.equals("yes") || line.startsWith("д") || line.equals("да");
   }
 
   public void close()

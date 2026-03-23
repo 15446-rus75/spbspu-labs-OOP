@@ -63,11 +63,11 @@ public class InteractiveMode
                     .map(String::trim)
                     .filter(availableApis::contains)
                     .toList();
-       if (apisToFetch.isEmpty())
-       {
-         System.out.println("Не выбрано ни одного доступного API.");
-         return;
-       }
+      if (apisToFetch.isEmpty())
+      {
+        System.out.println("Не выбрано ни одного доступного API.");
+        return;
+      }
     }
 
     Map<String, Map<String, String>> params = new HashMap<>();
@@ -81,10 +81,17 @@ public class InteractiveMode
         String[] pairs = paramLine.split(",");
         for (String pair : pairs)
         {
+          pair = pair.trim();
+          if (pair.isEmpty()) continue;
           String[] kv = pair.split("=");
           if (kv.length == 2)
           {
-            map.put(kv[0].trim(), kv[1].trim());
+            String key = kv[0].trim();
+            String value = kv[1].trim();
+            if (!key.isEmpty())
+            {
+              map.put(key, value);
+            }
           }
         }
         params.put(api, map);

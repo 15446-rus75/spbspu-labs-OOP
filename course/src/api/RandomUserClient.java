@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RandomUserClient extends AbstractApiClient
 {
@@ -28,40 +29,23 @@ public class RandomUserClient extends AbstractApiClient
   @Override
   protected String buildUrl(Map<String, String> queryParams)
   {
-    StringBuilder url = new StringBuilder(BASE_URL);
-    if (queryParams != null && !queryParams.isEmpty())
+    if (queryParams == null || queryParams.isEmpty())
     {
-      url.append("?");
-      queryParams.entrySet().forEach(entry ->
-                url.append(entry.getKey()).append("=").append(entry.getValue()).append("&"));
-            url.deleteCharAt(url.length() - 1);
+      return BASE_URL;
     }
-    return url.toString();
+    return BASE_URL + "?" + queryParams.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining("&"));
   }
 
   @Override
-  public ApiResponse fetchData(Map<String, String> queryParams) throws ApiException
+  protected JsonNode extractData(JsonNode root)
   {
-    String url = buildUrl(queryParams);
-    try
+    if (root.has("results") && root.get("results").isArray() && root.get("results").size() > 0)
     {
-      String jsonResponse = httpClient.get(url);
-      JsonNode root = jsonUtil.parse(jsonResponse);
-      JsonNode data;
-      if (root.has("results") && root.get("results").isArray() && root.get("results").size() > 0)
-      {
-        data = root.get("results").get(0);
-      }
-      else
-      {
-        data = root;
-      }
-      return new ApiResponse(getSourceName(), Instant.now(), data);
+      return root.get("results").get(0);
     }
-    catch (Exception e)
-    {
-      throw new ApiException("Ошибка при запросе к " + getSourceName(), e);
-    }
+    return root;
   }
 
   @Override

@@ -1,12 +1,12 @@
 package service;
 
+import api.ApiClient;
 import exception.FileProcessingException;
 import model.AggregatedRecord;
+import model.ApiResponse;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class InteractiveService
@@ -23,10 +23,15 @@ public class InteractiveService
 
   public void runAutoMode(String apisParam, String format, String outputFile)
   {
-    List<String> apiNames = Arrays.stream(apisParam.split(","))
+    List<String> apiNames;
+    if (apisParam.equalsIgnoreCase("all")) {
+      apiNames = apiService.getAvailableApiNames();
+    } else {
+      apiNames = Arrays.stream(apisParam.split(","))
                 .map(String::trim)
                 .filter(name -> apiService.getAvailableApiNames().contains(name))
                 .collect(Collectors.toList());
+    }
     if (apiNames.isEmpty())
     {
       System.out.println("Нет доступных API из списка: " + apisParam);
@@ -35,9 +40,15 @@ public class InteractiveService
 
     Map<String, Map<String, String>> params = new HashMap<>();
     List<AggregatedRecord> records = apiService.fetchDataFromApis(apiNames, params);
+    if (records.isEmpty())
+    {
+      System.out.println("Нет полученных данных.");
+      return;
+    }
+
     try
     {
-      fileService.saveRecords(records, outputFile, format, false);
+      saveRecords(records, outputFile, format, false);
       System.out.println("Данные сохранены в " + outputFile);
     }
     catch (FileProcessingException e)
@@ -54,7 +65,31 @@ public class InteractiveService
   public void saveRecords(List<AggregatedRecord> records, String filePath, String format, boolean append)
             throws FileProcessingException
   {
-    fileService.saveRecords(records, filePath, format, append);
+    var path = Paths.get(filePath);
+    if ("json".equalsIgnoreCase(format))
+    {
+      fileService.saveRecordsAsJson(records, path, append);
+    }
+    else if ("csv".equalsIgnoreCase(format))
+    {
+      List<Map<String, Object>> flatRecords = new ArrayList<>();
+      for (AggregatedRecord record : records)
+      {
+        ApiClient client = apiService.getClient(record.getSource());
+        if (client == null) continue;
+        ApiResponse apiResponse = new ApiResponse(record.getSource(), record.getTimestamp(), record.getData());
+        Map<String, Object> flat = client.flattenResponse(apiResponse);
+        flat.put("id", record.getId());
+        flat.put("source", record.getSource());
+        flat.put("timestamp", record.getTimestamp().toString());
+        flatRecords.add(flat);
+      }
+      fileService.saveRecordsAsCsv(flatRecords, path, append);
+    }
+    else
+    {
+      throw new FileProcessingException("Неподдерживаемый формат: " + format);
+    }
   }
 
   public void displayRecords(String filePath, String format, String sourceFilter)

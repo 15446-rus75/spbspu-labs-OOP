@@ -5,6 +5,7 @@ import util.HttpClientUtil;
 import util.JsonUtil;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ChuckNorrisClient extends AbstractApiClient
 {
@@ -30,8 +31,7 @@ public class ChuckNorrisClient extends AbstractApiClient
     }
     return BASE_URL + "?" + queryParams.entrySet().stream()
                 .map(e -> e.getKey() + "=" + e.getValue())
-                .reduce((p1, p2) -> p1 + "&" + p2)
-                .orElse("");
+                .collect(Collectors.joining("&"));
   }
 
   @Override

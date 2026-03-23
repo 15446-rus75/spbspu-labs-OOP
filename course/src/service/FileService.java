@@ -26,33 +26,14 @@ public class FileService
     this.jsonUtil = jsonUtil;
   }
 
-  public void saveRecords(List<AggregatedRecord> records, String filePath, String format, boolean append)
+  public void saveRecordsAsJson(List<AggregatedRecord> records, Path path, boolean append)
             throws FileProcessingException
   {
     if (records.isEmpty())
     {
       return;
     }
-    Path path = Paths.get(filePath);
     boolean fileExists = Files.exists(path);
-
-    if ("json".equalsIgnoreCase(format))
-    {
-      saveAsJson(records, path, append, fileExists);
-    }
-    else if ("csv".equalsIgnoreCase(format))
-    {
-      saveAsCsv(records, path, append, fileExists);
-    }
-    else
-    {
-      throw new FileProcessingException("Неподдерживаемый формат: " + format);
-    }
-  }
-
-  private void saveAsJson(List<AggregatedRecord> records, Path path, boolean append, boolean fileExists)
-            throws FileProcessingException
-  {
     try
     {
       List<AggregatedRecord> existing = new ArrayList<>();
@@ -69,6 +50,78 @@ public class FileService
     }
   }
 
+  public void saveRecordsAsCsv(List<Map<String, Object>> flatRecords, Path path, boolean append)
+            throws FileProcessingException
+  {
+    if (flatRecords.isEmpty())
+    {
+      return;
+    }
+    boolean fileExists = Files.exists(path);
+    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append)))
+    {
+      if (!append || !fileExists)
+      {
+        Set<String> allKeys = new LinkedHashSet<>();
+        allKeys.add("id");
+        allKeys.add("source");
+        allKeys.add("timestamp");
+        for (Map<String, Object> record : flatRecords)
+        {
+          allKeys.addAll(record.keySet());
+        }
+        String[] header = allKeys.toArray(new String[0]);
+        writer.writeNext(header);
+      }
+
+      String[] header = null;
+      if (append && fileExists)
+      {
+        try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
+        {
+          List<String[]> lines = reader.readAll();
+          if (!lines.isEmpty())
+          {
+            header = lines.get(0);
+          }
+        }
+        catch (IOException | CsvException e)
+        {
+          throw new FileProcessingException("Ошибка чтения заголовка CSV", e);
+        }
+      }
+
+      for (Map<String, Object> record : flatRecords)
+      {
+        String[] line;
+        if (header != null)
+        {
+          line = new String[header.length];
+          for (int i = 0; i < header.length; i++)
+          {
+            Object value = record.get(header[i]);
+            line[i] = value != null ? value.toString() : "";
+          }
+        }
+        else
+        {
+          List<String> keys = new ArrayList<>(record.keySet());
+          line = new String[keys.size()];
+          for (int i = 0; i < keys.size(); i++)
+          {
+            Object value = record.get(keys.get(i));
+            line[i] = value != null ? value.toString() : "";
+          }
+        }
+        writer.writeNext(line);
+      }
+    }
+    catch (IOException e)
+    {
+      throw new FileProcessingException("Ошибка записи CSV", e);
+    }
+  }
+
   private List<AggregatedRecord> readRecordsFromJson(Path path) throws IOException
   {
     ArrayNode array = jsonUtil.readArray(path);
@@ -82,28 +135,6 @@ public class FileService
       list.add(new AggregatedRecord(id, source, timestamp, data));
     }
     return list;
-  }
-
-  private void saveAsCsv(List<AggregatedRecord> records, Path path, boolean append, boolean fileExists)
-            throws FileProcessingException
-  {
-    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append)))
-    {
-      if (!append || !fileExists)
-      {
-        writer.writeNext(new String[]{"id", "source", "timestamp", "data"});
-      }
-      for (AggregatedRecord rec : records)
-      {
-        String[] line = new String[]{ rec.getId(), rec.getSource(), rec.getTimestamp().toString(),
-          rec.getData().toString() };
-        writer.writeNext(line);
-      }
-    }
-    catch (IOException e)
-    {
-      throw new FileProcessingException("Ошибка записи CSV", e);
-    }
   }
 
   public List<AggregatedRecord> readRecords(String filePath, String format) throws FileProcessingException
