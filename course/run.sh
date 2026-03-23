@@ -2,10 +2,10 @@
 
 mvn clean package
 
-java -jar target/data-aggregator-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -cp "target/api-aggregator-1.0-SNAPSHOT.jar:target/lib/*" main.Main \
   --mode auto \
   --apis chucknorris,zippopotam \
   --format json \
   --output data.json
 
-java -jar target/data-aggregator-1.0-SNAPSHOT-jar-with-dependencies.jar "$@"
+java -cp "target/api-aggregator-1.0-SNAPSHOT.jar:target/lib/*" main.Main "$@"
