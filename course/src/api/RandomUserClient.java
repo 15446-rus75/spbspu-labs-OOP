@@ -1,12 +1,10 @@
 package api;
 
-import exception.ApiException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import model.ApiResponse;
 import util.HttpClientUtil;
 import util.JsonUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,5 +59,23 @@ public class RandomUserClient extends AbstractApiClient
     flat.put("country", data.path("location").path("country").asText());
     flat.put("phone", data.path("phone").asText());
     return flat;
+  }
+
+  @Override
+  public JsonNode unflatten(Map<String, Object> flat)
+  {
+    ObjectNode node = jsonUtil.getMapper().createObjectNode();
+    node.put("gender", (String) flat.get("gender"));
+    ObjectNode nameNode = jsonUtil.getMapper().createObjectNode();
+    nameNode.put("title", (String) flat.get("title"));
+    nameNode.put("first", (String) flat.get("first_name"));
+    nameNode.put("last", (String) flat.get("last_name"));
+    node.set("name", nameNode);
+    node.put("email", (String) flat.get("email"));
+    ObjectNode locationNode = jsonUtil.getMapper().createObjectNode();
+    locationNode.put("country", (String) flat.get("country"));
+    node.set("location", locationNode);
+    node.put("phone", (String) flat.get("phone"));
+    return node;
   }
 }

@@ -137,6 +137,18 @@ public class FileService
     return list;
   }
 
+  public List<String[]> readRawCsv(Path path) throws FileProcessingException
+  {
+    try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
+    {
+      return reader.readAll();
+    }
+    catch (IOException | CsvException e)
+    {
+      throw new FileProcessingException("Ошибка чтения CSV", e);
+    }
+  }
+
   public List<AggregatedRecord> readRecords(String filePath, String format) throws FileProcessingException
   {
     Path path = Paths.get(filePath);
@@ -155,61 +167,9 @@ public class FileService
         throw new FileProcessingException("Ошибка чтения JSON", e);
       }
     }
-    else if ("csv".equalsIgnoreCase(format))
-    {
-      return readRecordsFromCsv(path);
-    }
     else
     {
-      throw new FileProcessingException("Неподдерживаемый формат: " + format);
+      throw new FileProcessingException("Неподдерживаемый формат для чтения: " + format);
     }
-  }
-
-  private List<AggregatedRecord> readRecordsFromCsv(Path path) throws FileProcessingException
-  {
-    List<AggregatedRecord> list = new ArrayList<>();
-    try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
-    {
-      List<String[]> lines = reader.readAll();
-      if (lines.isEmpty())
-      {
-        return list;
-      }
-      String[] header = lines.get(0);
-      int idIdx = indexOf(header, "id");
-      int srcIdx = indexOf(header, "source");
-      int tsIdx = indexOf(header, "timestamp");
-      int dataIdx = indexOf(header, "data");
-      if (idIdx == -1 || srcIdx == -1 || tsIdx == -1 || dataIdx == -1)
-      {
-        throw new FileProcessingException("CSV файл не содержит обязательных колонок");
-      }
-      for (int i = 1; i < lines.size(); ++i)
-      {
-        String[] line = lines.get(i);
-        String id = line[idIdx];
-        String source = line[srcIdx];
-        Instant timestamp = Instant.parse(line[tsIdx]);
-        JsonNode data = jsonUtil.parse(line[dataIdx]);
-        list.add(new AggregatedRecord(id, source, timestamp, data));
-      }
-    }
-    catch (IOException | CsvException e)
-    {
-      throw new FileProcessingException("Ошибка чтения CSV", e);
-    }
-    return list;
-  }
-
-  private int indexOf(String[] arr, String target)
-  {
-    for (int i = 0; i < arr.length; ++i)
-    {
-      if (arr[i].equalsIgnoreCase(target))
-      {
-        return i;
-      }
-    }
-    return -1;
   }
 }

@@ -1,9 +1,11 @@
 package api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import model.ApiResponse;
 import util.HttpClientUtil;
 import util.JsonUtil;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,5 +48,22 @@ public class ZipCodeClient extends AbstractApiClient
       flat.put("longitude", firstPlace.path("longitude").asText());
     }
     return flat;
+  }
+
+  @Override
+  public JsonNode unflatten(Map<String, Object> flat)
+  {
+    ObjectNode node = jsonUtil.getMapper().createObjectNode();
+    node.put("post code", (String) flat.get("post code"));
+    node.put("country", (String) flat.get("country"));
+    ArrayNode places = jsonUtil.getMapper().createArrayNode();
+    ObjectNode place = jsonUtil.getMapper().createObjectNode();
+    place.put("place name", (String) flat.get("place name"));
+    place.put("state", (String) flat.get("state"));
+    place.put("latitude", (String) flat.get("latitude"));
+    place.put("longitude", (String) flat.get("longitude"));
+    places.add(place);
+    node.set("places", places);
+    return node;
   }
 }

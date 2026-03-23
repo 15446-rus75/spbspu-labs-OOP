@@ -4,8 +4,10 @@ import api.ApiClient;
 import exception.FileProcessingException;
 import model.AggregatedRecord;
 import model.ApiResponse;
+import util.JsonUtil;
 
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -14,6 +16,7 @@ public class InteractiveService
   private final ApiService apiService;
   private final FileService fileService;
   private final DataPrinter printer = new DataPrinter();
+  private final JsonUtil jsonUtil = new JsonUtil();
 
   public InteractiveService(ApiService apiService, FileService fileService)
   {
@@ -24,9 +27,12 @@ public class InteractiveService
   public void runAutoMode(String apisParam, String format, String outputFile)
   {
     List<String> apiNames;
-    if (apisParam.equalsIgnoreCase("all")) {
+    if (apisParam.equalsIgnoreCase("all"))
+    {
       apiNames = apiService.getAvailableApiNames();
-    } else {
+    }
+    else
+    {
       apiNames = Arrays.stream(apisParam.split(","))
                 .map(String::trim)
                 .filter(name -> apiService.getAvailableApiNames().contains(name))
@@ -96,19 +102,86 @@ public class InteractiveService
   {
     try
     {
-      List<AggregatedRecord> records = fileService.readRecords(filePath, format);
-      if (sourceFilter == null)
+      if ("json".equalsIgnoreCase(format))
       {
-        printer.printAll(records);
+        List<AggregatedRecord> records = fileService.readRecords(filePath, format);
+        if (sourceFilter == null)
+          printer.printAll(records);
+        else
+          printer.printBySource(records, sourceFilter);
+      }
+      else if ("csv".equalsIgnoreCase(format))
+      {
+        var path = Paths.get(filePath);
+        List<String[]> lines = fileService.readRawCsv(path);
+        if (lines.isEmpty())
+        {
+          System.out.println("Файл пуст.");
+          return;
+        }
+
+        String[] header = lines.get(0);
+        int dataIdx = indexOf(header, "data");
+        if (dataIdx != -1)
+        {
+          List<AggregatedRecord> records = new ArrayList<>();
+          for (int i = 1; i < lines.size(); i++)
+          {
+            String[] row = lines.get(i);
+            String id = row[indexOf(header, "id")];
+            String source = row[indexOf(header, "source")];
+            Instant timestamp = Instant.parse(row[indexOf(header, "timestamp")]);
+            String dataJson = row[dataIdx];
+            var data = jsonUtil.parse(dataJson);
+            records.add(new AggregatedRecord(id, source, timestamp, data));
+          }
+          if (sourceFilter == null)
+            printer.printAll(records);
+          else
+            printer.printBySource(records, sourceFilter);
+        }
+        else
+        {
+          List<AggregatedRecord> records = new ArrayList<>();
+          for (int i = 1; i < lines.size(); i++)
+          {
+            String[] row = lines.get(i);
+            Map<String, Object> flat = new HashMap<>();
+            for (int j = 0; j < header.length; j++)
+            {
+              flat.put(header[j], row[j]);
+            }
+            String source = (String) flat.get("source");
+            String id = (String) flat.get("id");
+            Instant timestamp = Instant.parse((String) flat.get("timestamp"));
+            ApiClient client = apiService.getClient(source);
+            if (client == null) continue;
+            var data = client.unflatten(flat);
+            records.add(new AggregatedRecord(id, source, timestamp, data));
+          }
+          if (sourceFilter == null)
+            printer.printAll(records);
+          else
+            printer.printBySource(records, sourceFilter);
+        }
       }
       else
       {
-        printer.printBySource(records, sourceFilter);
+        System.err.println("Неподдерживаемый формат: " + format);
       }
     }
-    catch (FileProcessingException e)
+    catch (Exception e)
     {
       System.err.println("Ошибка чтения файла: " + e.getMessage());
     }
+  }
+
+  private int indexOf(String[] arr, String target)
+  {
+    for (int i = 0; i < arr.length; i++)
+    {
+      if (arr[i].equalsIgnoreCase(target)) return i;
+    }
+    return -1;
   }
 }

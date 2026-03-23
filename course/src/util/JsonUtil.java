@@ -19,6 +19,11 @@ public class JsonUtil
     this.mapper.registerModule(new JavaTimeModule());
   }
 
+  public ObjectMapper getMapper()
+  {
+    return mapper;
+  }
+
   public JsonNode parse(String json) throws IOException
   {
     return mapper.readTree(json);

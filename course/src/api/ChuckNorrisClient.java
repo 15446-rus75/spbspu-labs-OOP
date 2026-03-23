@@ -1,5 +1,7 @@
 package api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import model.ApiResponse;
 import util.HttpClientUtil;
 import util.JsonUtil;
@@ -43,5 +45,16 @@ public class ChuckNorrisClient extends AbstractApiClient
     flat.put("created_at", response.getData().path("created_at").asText());
     flat.put("categories", response.getData().path("categories").toString());
     return flat;
+  }
+
+  @Override
+  public JsonNode unflatten(Map<String, Object> flat)
+  {
+    ObjectNode node = jsonUtil.getMapper().createObjectNode();
+    node.put("id", (String) flat.get("id"));
+    node.put("value", (String) flat.get("value"));
+    node.put("created_at", (String) flat.get("created_at"));
+    node.put("categories", (String) flat.get("categories"));
+    return node;
   }
 }
