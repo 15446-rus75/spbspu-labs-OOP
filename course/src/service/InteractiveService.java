@@ -27,9 +27,12 @@ public class InteractiveService
   public void runAutoMode(String apisParam, String format, String outputFile)
   {
     List<String> apiNames;
-    if (apisParam.equalsIgnoreCase("all")) {
+    if (apisParam.equalsIgnoreCase("all"))
+    {
       apiNames = apiService.getAvailableApiNames();
-    } else {
+    }
+    else
+    {
       apiNames = Arrays.stream(apisParam.split(","))
                 .map(String::trim)
                 .filter(name -> apiService.getAvailableApiNames().contains(name))
@@ -103,9 +106,13 @@ public class InteractiveService
       {
         List<AggregatedRecord> records = fileService.readRecords(filePath, format);
         if (sourceFilter == null)
+        {
           printer.printAll(records);
+        }
         else
+        {
           printer.printBySource(records, sourceFilter);
+        }
       }
       else if ("csv".equalsIgnoreCase(format))
       {
@@ -130,7 +137,7 @@ public class InteractiveService
             System.err.println("CSV файл не содержит обязательных колонок (id, source, timestamp)");
             return;
           }
-          for (int i = 1; i < lines.size(); i++)
+          for (int i = 1; i < lines.size(); ++i)
           {
             String[] row = lines.get(i);
             if (row.length <= Math.max(Math.max(idIdx, srcIdx), Math.max(tsIdx, dataIdx)))
@@ -142,24 +149,34 @@ public class InteractiveService
             String source = row[srcIdx];
             String timestampStr = row[tsIdx];
             Instant timestamp;
-            try {
+            try
+            {
               timestamp = Instant.parse(timestampStr);
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
               System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
               continue;
             }
             String dataJson = row[dataIdx];
-            try {
+            try
+            {
               var data = jsonUtil.parse(dataJson);
               records.add(new AggregatedRecord(id, source, timestamp, data));
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
               System.err.println("Ошибка парсинга JSON в строке " + (i+1) + ", запись пропущена");
             }
           }
           if (sourceFilter == null)
+          {
             printer.printAll(records);
+          }
           else
+          {
             printer.printBySource(records, sourceFilter);
+          }
         }
         else
         {
@@ -172,7 +189,7 @@ public class InteractiveService
             System.err.println("CSV файл не содержит обязательных колонок (id, source, timestamp)");
             return;
           }
-          for (int i = 1; i < lines.size(); i++)
+          for (int i = 1; i < lines.size(); ++i)
           {
             String[] row = lines.get(i);
             if (row.length <= Math.max(idIdx, Math.max(srcIdx, tsIdx)))
@@ -181,7 +198,7 @@ public class InteractiveService
               continue;
             }
             Map<String, Object> flat = new HashMap<>();
-            for (int j = 0; j < header.length; j++)
+            for (int j = 0; j < header.length; ++j)
             {
               String value = (j < row.length) ? row[j] : "";
               flat.put(header[j], value);
@@ -190,28 +207,39 @@ public class InteractiveService
             String id = (String) flat.get("id");
             String timestampStr = (String) flat.get("timestamp");
             Instant timestamp;
-            try {
+            try
+            {
               timestamp = Instant.parse(timestampStr);
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
               System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
               continue;
             }
             ApiClient client = apiService.getClient(source);
-            if (client == null) {
+            if (client == null)
+            {
               System.err.println("Неизвестный источник '" + source + "' в строке " + (i+1) + ", запись пропущена");
               continue;
             }
-            try {
+            try
+            {
               var data = client.unflatten(flat);
               records.add(new AggregatedRecord(id, source, timestamp, data));
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
               System.err.println("Ошибка восстановления данных для источника " + source + " в строке " + (i+1) + ": " + e.getMessage());
             }
           }
           if (sourceFilter == null)
+          {
             printer.printAll(records);
+          }
           else
+          {
             printer.printBySource(records, sourceFilter);
+          }
         }
       }
       else
@@ -227,9 +255,12 @@ public class InteractiveService
 
   private int indexOf(String[] arr, String target)
   {
-    for (int i = 0; i < arr.length; i++)
+    for (int i = 0; i < arr.length; ++i)
     {
-      if (arr[i].equalsIgnoreCase(target)) return i;
+      if (arr[i].equalsIgnoreCase(target))
+      {
+        return i;
+      }
     }
     return -1;
   }

@@ -82,7 +82,10 @@ public class InteractiveMode
         for (String pair : pairs)
         {
           pair = pair.trim();
-          if (pair.isEmpty()) continue;
+          if (pair.isEmpty())
+          {
+            continue;
+          }
           String[] kv = pair.split("=");
           if (kv.length == 2)
           {
