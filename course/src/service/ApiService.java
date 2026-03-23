@@ -43,6 +43,7 @@ public class ApiService
       ApiClient client = clients.get(name);
       if (client == null)
       {
+        System.err.println("Предупреждение: API '" + name + "' не найден");
         continue;
       }
       try

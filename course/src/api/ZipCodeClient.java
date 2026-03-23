@@ -36,14 +36,16 @@ public class ZipCodeClient extends AbstractApiClient
   {
     Map< String, Object > flat = new HashMap<>();
     JsonNode data = response.getData();
-    flat.put("post code", data.path("post code").asText());
+    flat.put("post_code", data.path("post code").asText());
     flat.put("country", data.path("country").asText());
+    flat.put("country_abbreviation", data.path("country abbreviation").asText());
     JsonNode places = data.path("places");
     if (places.isArray() && places.size() > 0)
     {
       JsonNode firstPlace = places.get(0);
-      flat.put("place name", firstPlace.path("place name").asText());
+      flat.put("place_name", firstPlace.path("place name").asText());
       flat.put("state", firstPlace.path("state").asText());
+      flat.put("state_abbreviation", firstPlace.path("state abbreviation").asText());
       flat.put("latitude", firstPlace.path("latitude").asText());
       flat.put("longitude", firstPlace.path("longitude").asText());
     }
@@ -54,12 +56,14 @@ public class ZipCodeClient extends AbstractApiClient
   public JsonNode unflatten(Map< String, Object > flat)
   {
     ObjectNode node = jsonUtil.getMapper().createObjectNode();
-    node.put("post code", (String) flat.get("post code"));
+    node.put("post code", (String) flat.get("post_code"));
     node.put("country", (String) flat.get("country"));
+    node.put("country abbreviation", (String) flat.get("country_abbreviation"));
     ArrayNode places = jsonUtil.getMapper().createArrayNode();
     ObjectNode place = jsonUtil.getMapper().createObjectNode();
-    place.put("place name", (String) flat.get("place name"));
+    place.put("place name", (String) flat.get("place_name"));
     place.put("state", (String) flat.get("state"));
+    place.put("state abbreviation", (String) flat.get("state_abbreviation"));
     place.put("latitude", (String) flat.get("latitude"));
     place.put("longitude", (String) flat.get("longitude"));
     places.add(place);

@@ -15,13 +15,15 @@ public class InteractiveService
 {
   private final ApiService apiService;
   private final FileService fileService;
-  private final DataPrinter printer = new DataPrinter();
-  private final JsonUtil jsonUtil = new JsonUtil();
+  private final DataPrinter printer;
+  private final JsonUtil jsonUtil;
 
-  public InteractiveService(ApiService apiService, FileService fileService)
+  public InteractiveService(ApiService apiService, FileService fileService, JsonUtil jsonUtil)
   {
     this.apiService = apiService;
     this.fileService = fileService;
+    this.printer = new DataPrinter();
+    this.jsonUtil = jsonUtil;
   }
 
   public void runAutoMode(String apisParam, String format, String outputFile)
@@ -82,7 +84,10 @@ public class InteractiveService
       for (AggregatedRecord record : records)
       {
         ApiClient client = apiService.getClient(record.getSource());
-        if (client == null) continue;
+        if (client == null)
+        {
+          continue;
+        }
         ApiResponse apiResponse = new ApiResponse(record.getSource(), record.getTimestamp(), record.getData());
         Map< String, Object > flat = client.flattenResponse(apiResponse);
         flat.put("id", record.getId());
@@ -142,7 +147,7 @@ public class InteractiveService
             String[] row = lines.get(i);
             if (row.length <= Math.max(Math.max(idIdx, srcIdx), Math.max(tsIdx, dataIdx)))
             {
-              System.err.println("Строка " + (i+1) + " имеет недостаточно колонок, пропускаем");
+              System.err.println("Строка " + (i + 1) + " имеет недостаточно колонок, пропускаем");
               continue;
             }
             String id = row[idIdx];
@@ -155,7 +160,7 @@ public class InteractiveService
             }
             catch (Exception e)
             {
-              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
+              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i + 1) + ", запись пропущена");
               continue;
             }
             String dataJson = row[dataIdx];
@@ -166,7 +171,7 @@ public class InteractiveService
             }
             catch (Exception e)
             {
-              System.err.println("Ошибка парсинга JSON в строке " + (i+1) + ", запись пропущена");
+              System.err.println("Ошибка парсинга JSON в строке " + (i + 1) + ", запись пропущена");
             }
           }
           if (sourceFilter == null)
@@ -194,7 +199,7 @@ public class InteractiveService
             String[] row = lines.get(i);
             if (row.length <= Math.max(idIdx, Math.max(srcIdx, tsIdx)))
             {
-              System.err.println("Строка " + (i+1) + " имеет недостаточно колонок, пропускаем");
+              System.err.println("Строка " + (i + 1) + " имеет недостаточно колонок, пропускаем");
               continue;
             }
             Map< String, Object > flat = new HashMap<>();
@@ -213,13 +218,13 @@ public class InteractiveService
             }
             catch (Exception e)
             {
-              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
+              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i + 1) + ", запись пропущена");
               continue;
             }
             ApiClient client = apiService.getClient(source);
             if (client == null)
             {
-              System.err.println("Неизвестный источник '" + source + "' в строке " + (i+1) + ", запись пропущена");
+              System.err.println("Неизвестный источник '" + source + "' в строке " + (i + 1) + ", запись пропущена");
               continue;
             }
             try
@@ -229,7 +234,7 @@ public class InteractiveService
             }
             catch (Exception e)
             {
-              System.err.println("Ошибка восстановления данных для источника " + source + " в строке " + (i+1) + ": " + e.getMessage());
+              System.err.println("Ошибка восстановления данных для источника " + source + " в строке " + (i + 1) + ": " + e.getMessage());
             }
           }
           if (sourceFilter == null)

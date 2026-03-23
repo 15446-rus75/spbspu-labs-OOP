@@ -7,7 +7,6 @@ import util.HttpClientUtil;
 import util.JsonUtil;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class RandomUserClient extends AbstractApiClient
 {
@@ -27,13 +26,7 @@ public class RandomUserClient extends AbstractApiClient
   @Override
   protected String buildUrl(Map< String, String > queryParams)
   {
-    if (queryParams == null || queryParams.isEmpty())
-    {
-      return BASE_URL;
-    }
-    return BASE_URL + "?" + queryParams.entrySet().stream()
-                .map(e -> e.getKey() + "=" + e.getValue())
-                .collect(Collectors.joining("&"));
+    return buildUrlWithQueryParams(BASE_URL, queryParams);
   }
 
   @Override
@@ -58,6 +51,7 @@ public class RandomUserClient extends AbstractApiClient
     flat.put("email", data.path("email").asText());
     flat.put("country", data.path("location").path("country").asText());
     flat.put("phone", data.path("phone").asText());
+    flat.put("city", data.path("location").path("city").asText());
     return flat;
   }
 
@@ -74,6 +68,7 @@ public class RandomUserClient extends AbstractApiClient
     node.put("email", (String) flat.get("email"));
     ObjectNode locationNode = jsonUtil.getMapper().createObjectNode();
     locationNode.put("country", (String) flat.get("country"));
+    locationNode.put("city", (String) flat.get("city"));
     node.set("location", locationNode);
     node.put("phone", (String) flat.get("phone"));
     return node;

@@ -23,7 +23,7 @@ public class ApiResponse
 
   public Instant getTimestamp()
   {
-   return timestamp;
+    return timestamp;
   }
 
   public JsonNode getData()

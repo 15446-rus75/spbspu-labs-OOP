@@ -36,12 +36,12 @@ public class Main
         return;
       }
 
-      InteractiveService interactiveService = new InteractiveService(apiService, fileService);
+      InteractiveService interactiveService = new InteractiveService(apiService, fileService, jsonUtil);
       interactiveService.runAutoMode(apis, format, output);
     }
     else
     {
-      InteractiveMode interactiveMode = new InteractiveMode(apiService, fileService);
+      InteractiveMode interactiveMode = new InteractiveMode(apiService, fileService, jsonUtil);
       interactiveMode.start();
     }
   }

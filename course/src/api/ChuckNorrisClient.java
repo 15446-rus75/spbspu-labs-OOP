@@ -7,7 +7,6 @@ import util.HttpClientUtil;
 import util.JsonUtil;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ChuckNorrisClient extends AbstractApiClient
 {
@@ -27,13 +26,7 @@ public class ChuckNorrisClient extends AbstractApiClient
   @Override
   protected String buildUrl(Map< String, String > queryParams)
   {
-    if (queryParams == null || queryParams.isEmpty())
-    {
-      return BASE_URL;
-    }
-    return BASE_URL + "?" + queryParams.entrySet().stream()
-                .map(e -> e.getKey() + "=" + e.getValue())
-                .collect(Collectors.joining("&"));
+    return buildUrlWithQueryParams(BASE_URL, queryParams);
   }
 
   @Override
@@ -44,6 +37,8 @@ public class ChuckNorrisClient extends AbstractApiClient
     flat.put("value", response.getData().path("value").asText());
     flat.put("created_at", response.getData().path("created_at").asText());
     flat.put("categories", response.getData().path("categories").toString());
+    flat.put("icon_url", response.getData().path("icon_url").asText());
+    flat.put("updated_at", response.getData().path("updated_at").asText());
     return flat;
   }
 
@@ -55,6 +50,8 @@ public class ChuckNorrisClient extends AbstractApiClient
     node.put("value", (String) flat.get("value"));
     node.put("created_at", (String) flat.get("created_at"));
     node.put("categories", (String) flat.get("categories"));
+    node.put("icon_url", (String) flat.get("icon_url"));
+    node.put("updated_at", (String) flat.get("updated_at"));
     return node;
   }
 }

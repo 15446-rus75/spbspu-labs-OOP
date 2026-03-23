@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AbstractApiClient implements ApiClient
 {
@@ -25,6 +26,17 @@ public abstract class AbstractApiClient implements ApiClient
   protected JsonNode extractData(JsonNode root)
   {
     return root;
+  }
+
+  protected String buildUrlWithQueryParams(String baseUrl, Map< String, String > queryParams)
+  {
+    if (queryParams == null || queryParams.isEmpty())
+    {
+      return baseUrl;
+    }
+    return baseUrl + "?" + queryParams.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining("&"));
   }
 
   @Override

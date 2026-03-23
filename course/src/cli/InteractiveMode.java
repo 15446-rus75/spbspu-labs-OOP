@@ -5,6 +5,7 @@ import model.AggregatedRecord;
 import service.ApiService;
 import service.FileService;
 import service.InteractiveService;
+import util.JsonUtil;
 
 import java.util.*;
 
@@ -14,9 +15,9 @@ public class InteractiveMode
   private final ConsoleInputHandler inputHandler;
   private final List< String > availableApis;
 
-  public InteractiveMode(ApiService apiService, FileService fileService)
+  public InteractiveMode(ApiService apiService, FileService fileService, JsonUtil jsonUtil)
   {
-    this.interactiveService = new InteractiveService(apiService, fileService);
+    this.interactiveService = new InteractiveService(apiService, fileService, jsonUtil);
     this.inputHandler = new ConsoleInputHandler();
     this.availableApis = apiService.getAvailableApiNames();
   }
