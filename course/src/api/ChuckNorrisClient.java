@@ -25,7 +25,7 @@ public class ChuckNorrisClient extends AbstractApiClient
   }
 
   @Override
-  protected String buildUrl(Map<String, String> queryParams)
+  protected String buildUrl(Map< String, String > queryParams)
   {
     if (queryParams == null || queryParams.isEmpty())
     {
@@ -37,9 +37,9 @@ public class ChuckNorrisClient extends AbstractApiClient
   }
 
   @Override
-  public Map<String, Object> flattenResponse(ApiResponse response)
+  public Map< String, Object > flattenResponse(ApiResponse response)
   {
-    Map<String, Object> flat = new HashMap<>();
+    Map< String, Object > flat = new HashMap<>();
     flat.put("id", response.getData().path("id").asText());
     flat.put("value", response.getData().path("value").asText());
     flat.put("created_at", response.getData().path("created_at").asText());
@@ -48,7 +48,7 @@ public class ChuckNorrisClient extends AbstractApiClient
   }
 
   @Override
-  public JsonNode unflatten(Map<String, Object> flat)
+  public JsonNode unflatten(Map< String, Object > flat)
   {
     ObjectNode node = jsonUtil.getMapper().createObjectNode();
     node.put("id", (String) flat.get("id"));

@@ -8,7 +8,7 @@ import java.util.Map;
 public interface ApiClient
 {
   String getSourceName();
-  ApiResponse fetchData(Map<String, String> queryParams) throws ApiException;
-  Map<String, Object> flattenResponse(ApiResponse response);
-  JsonNode unflatten(Map<String, Object> flat);
+  ApiResponse fetchData(Map< String, String > queryParams) throws ApiException;
+  Map< String, Object > flattenResponse(ApiResponse response);
+  JsonNode unflatten(Map< String, Object > flat);
 }

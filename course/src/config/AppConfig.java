@@ -12,7 +12,7 @@ import java.util.List;
 
 public class AppConfig
 {
-  private final List<ApiClient> apiClients;
+  private final List< ApiClient > apiClients;
 
   public AppConfig()
   {
@@ -25,7 +25,7 @@ public class AppConfig
     apiClients.add(new RandomUserClient(httpClient, jsonUtil));
   }
 
-  public List<ApiClient> getApiClients()
+  public List< ApiClient > getApiClients()
   {
     return apiClients;
   }

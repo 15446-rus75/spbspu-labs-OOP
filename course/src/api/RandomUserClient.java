@@ -25,7 +25,7 @@ public class RandomUserClient extends AbstractApiClient
   }
 
   @Override
-  protected String buildUrl(Map<String, String> queryParams)
+  protected String buildUrl(Map< String, String > queryParams)
   {
     if (queryParams == null || queryParams.isEmpty())
     {
@@ -47,9 +47,9 @@ public class RandomUserClient extends AbstractApiClient
   }
 
   @Override
-  public Map<String, Object> flattenResponse(ApiResponse response)
+  public Map< String, Object > flattenResponse(ApiResponse response)
   {
-    Map<String, Object> flat = new HashMap<>();
+    Map< String, Object > flat = new HashMap<>();
     JsonNode data = response.getData();
     flat.put("gender", data.path("gender").asText());
     flat.put("title", data.path("name").path("title").asText());
@@ -62,7 +62,7 @@ public class RandomUserClient extends AbstractApiClient
   }
 
   @Override
-  public JsonNode unflatten(Map<String, Object> flat)
+  public JsonNode unflatten(Map< String, Object > flat)
   {
     ObjectNode node = jsonUtil.getMapper().createObjectNode();
     node.put("gender", (String) flat.get("gender"));

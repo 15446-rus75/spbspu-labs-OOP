@@ -26,7 +26,7 @@ public class InteractiveService
 
   public void runAutoMode(String apisParam, String format, String outputFile)
   {
-    List<String> apiNames;
+    List< String > apiNames;
     if (apisParam.equalsIgnoreCase("all"))
     {
       apiNames = apiService.getAvailableApiNames();
@@ -44,8 +44,8 @@ public class InteractiveService
       return;
     }
 
-    Map<String, Map<String, String>> params = new HashMap<>();
-    List<AggregatedRecord> records = apiService.fetchDataFromApis(apiNames, params);
+    Map< String, Map< String, String > > params = new HashMap<>();
+    List< AggregatedRecord > records = apiService.fetchDataFromApis(apiNames, params);
     if (records.isEmpty())
     {
       System.out.println("Нет полученных данных.");
@@ -63,12 +63,12 @@ public class InteractiveService
     }
   }
 
-  public List<AggregatedRecord> fetchFromApis(List<String> apiNames, Map<String, Map<String, String>> params)
+  public List< AggregatedRecord > fetchFromApis(List< String > apiNames, Map< String, Map< String, String > > params)
   {
     return apiService.fetchDataFromApis(apiNames, params);
   }
 
-  public void saveRecords(List<AggregatedRecord> records, String filePath, String format, boolean append)
+  public void saveRecords(List< AggregatedRecord > records, String filePath, String format, boolean append)
             throws FileProcessingException
   {
     var path = Paths.get(filePath);
@@ -78,13 +78,13 @@ public class InteractiveService
     }
     else if ("csv".equalsIgnoreCase(format))
     {
-      List<Map<String, Object>> flatRecords = new ArrayList<>();
+      List< Map< String, Object > > flatRecords = new ArrayList<>();
       for (AggregatedRecord record : records)
       {
         ApiClient client = apiService.getClient(record.getSource());
         if (client == null) continue;
         ApiResponse apiResponse = new ApiResponse(record.getSource(), record.getTimestamp(), record.getData());
-        Map<String, Object> flat = client.flattenResponse(apiResponse);
+        Map< String, Object > flat = client.flattenResponse(apiResponse);
         flat.put("id", record.getId());
         flat.put("source", record.getSource());
         flat.put("timestamp", record.getTimestamp().toString());
@@ -104,7 +104,7 @@ public class InteractiveService
     {
       if ("json".equalsIgnoreCase(format))
       {
-        List<AggregatedRecord> records = fileService.readRecords(filePath, format);
+        List< AggregatedRecord > records = fileService.readRecords(filePath, format);
         if (sourceFilter == null)
         {
           printer.printAll(records);
@@ -117,7 +117,7 @@ public class InteractiveService
       else if ("csv".equalsIgnoreCase(format))
       {
         var path = Paths.get(filePath);
-        List<String[]> lines = fileService.readRawCsv(path);
+        List< String[] > lines = fileService.readRawCsv(path);
         if (lines.isEmpty())
         {
           System.out.println("Файл пуст.");
@@ -128,7 +128,7 @@ public class InteractiveService
         int dataIdx = indexOf(header, "data");
         if (dataIdx != -1)
         {
-          List<AggregatedRecord> records = new ArrayList<>();
+          List< AggregatedRecord > records = new ArrayList<>();
           int idIdx = indexOf(header, "id");
           int srcIdx = indexOf(header, "source");
           int tsIdx = indexOf(header, "timestamp");
@@ -180,7 +180,7 @@ public class InteractiveService
         }
         else
         {
-          List<AggregatedRecord> records = new ArrayList<>();
+          List< AggregatedRecord > records = new ArrayList<>();
           int idIdx = indexOf(header, "id");
           int srcIdx = indexOf(header, "source");
           int tsIdx = indexOf(header, "timestamp");
@@ -197,7 +197,7 @@ public class InteractiveService
               System.err.println("Строка " + (i+1) + " имеет недостаточно колонок, пропускаем");
               continue;
             }
-            Map<String, Object> flat = new HashMap<>();
+            Map< String, Object > flat = new HashMap<>();
             for (int j = 0; j < header.length; ++j)
             {
               String value = (j < row.length) ? row[j] : "";

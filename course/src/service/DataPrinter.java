@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class DataPrinter
 {
-  public void printAll(List<AggregatedRecord> records)
+  public void printAll(List< AggregatedRecord > records)
   {
     if (records.isEmpty())
     {
@@ -19,9 +19,9 @@ public class DataPrinter
     }
   }
 
-  public void printBySource(List<AggregatedRecord> records, String source)
+  public void printBySource(List< AggregatedRecord > records, String source)
   {
-    List<AggregatedRecord> filtered = records.stream()
+    List< AggregatedRecord > filtered = records.stream()
                 .filter(r -> r.getSource().equalsIgnoreCase(source))
                 .collect(Collectors.toList());
     if (filtered.isEmpty())

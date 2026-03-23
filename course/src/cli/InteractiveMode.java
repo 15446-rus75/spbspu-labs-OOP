@@ -12,7 +12,7 @@ public class InteractiveMode
 {
   private final InteractiveService interactiveService;
   private final ConsoleInputHandler inputHandler;
-  private final List<String> availableApis;
+  private final List< String > availableApis;
 
   public InteractiveMode(ApiService apiService, FileService fileService)
   {
@@ -52,7 +52,7 @@ public class InteractiveMode
   {
     System.out.println("Доступные API: " + availableApis);
     String chosen = inputHandler.readString("Введите названия API через запятую (или 'all' для всех): ");
-    List<String> apisToFetch;
+    List< String > apisToFetch;
     if (chosen.equalsIgnoreCase("all"))
     {
       apisToFetch = new ArrayList<>(availableApis);
@@ -70,14 +70,14 @@ public class InteractiveMode
       }
     }
 
-    Map<String, Map<String, String>> params = new HashMap<>();
+    Map< String, Map< String, String > > params = new HashMap<>();
     for (String api : apisToFetch)
     {
       System.out.println("Введите параметры для " + api + " (в формате ключ=значение, пусто если нет):");
       String paramLine = inputHandler.readString("");
       if (!paramLine.isBlank())
       {
-        Map<String, String> map = new HashMap<>();
+        Map< String, String > map = new HashMap<>();
         String[] pairs = paramLine.split(",");
         for (String pair : pairs)
         {
@@ -101,7 +101,7 @@ public class InteractiveMode
       }
     }
 
-    List<AggregatedRecord> records = interactiveService.fetchFromApis(apisToFetch, params);
+    List< AggregatedRecord > records = interactiveService.fetchFromApis(apisToFetch, params);
     if (records.isEmpty())
     {
       System.out.println("Нет полученных данных.");

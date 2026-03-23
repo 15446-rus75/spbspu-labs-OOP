@@ -34,7 +34,7 @@ public class JsonUtil
     return mapper.readValue(path.toFile(), ArrayNode.class);
   }
 
-  public void write(Path path, List<?> objects) throws IOException
+  public void write(Path path, List< ? > objects) throws IOException
   {
     mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), objects);
   }

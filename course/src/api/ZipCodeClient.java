@@ -25,16 +25,16 @@ public class ZipCodeClient extends AbstractApiClient
   }
 
   @Override
-  protected String buildUrl(Map<String, String> queryParams)
+  protected String buildUrl(Map< String, String > queryParams)
   {
     String zip = (queryParams != null && queryParams.containsKey("zip")) ? queryParams.get("zip") : "90210";
     return BASE_URL + zip;
   }
 
   @Override
-  public Map<String, Object> flattenResponse(ApiResponse response)
+  public Map< String, Object > flattenResponse(ApiResponse response)
   {
-    Map<String, Object> flat = new HashMap<>();
+    Map< String, Object > flat = new HashMap<>();
     JsonNode data = response.getData();
     flat.put("post code", data.path("post code").asText());
     flat.put("country", data.path("country").asText());
@@ -51,7 +51,7 @@ public class ZipCodeClient extends AbstractApiClient
   }
 
   @Override
-  public JsonNode unflatten(Map<String, Object> flat)
+  public JsonNode unflatten(Map< String, Object > flat)
   {
     ObjectNode node = jsonUtil.getMapper().createObjectNode();
     node.put("post code", (String) flat.get("post code"));

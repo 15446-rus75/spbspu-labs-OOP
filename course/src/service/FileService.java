@@ -26,14 +26,17 @@ public class FileService
     this.jsonUtil = jsonUtil;
   }
 
-  public void saveRecordsAsJson(List<AggregatedRecord> records, Path path, boolean append)
+  public void saveRecordsAsJson(List< AggregatedRecord > records, Path path, boolean append)
             throws FileProcessingException
   {
-    if (records.isEmpty()) return;
+    if (records.isEmpty())
+    {
+      return;
+    }
     boolean fileExists = Files.exists(path);
     try
     {
-      List<AggregatedRecord> existing = new ArrayList<>();
+      List< AggregatedRecord > existing = new ArrayList<>();
       if (append && fileExists)
       {
         existing = readRecordsFromJson(path);
@@ -47,7 +50,7 @@ public class FileService
     }
   }
 
-  public void saveRecordsAsCsv(List<Map<String, Object>> flatRecords, Path path, boolean append)
+  public void saveRecordsAsCsv(List< Map< String, Object > > flatRecords, Path path, boolean append)
             throws FileProcessingException
   {
     if (flatRecords.isEmpty())
@@ -61,7 +64,7 @@ public class FileService
     {
       try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
       {
-        List<String[]> lines = reader.readAll();
+        List< String[] > lines = reader.readAll();
         if (!lines.isEmpty())
         {
           header = lines.get(0);
@@ -78,11 +81,11 @@ public class FileService
     }
     else
     {
-      Set<String> allKeys = new LinkedHashSet<>();
+      Set< String > allKeys = new LinkedHashSet<>();
       allKeys.add("id");
       allKeys.add("source");
       allKeys.add("timestamp");
-      for (Map<String, Object> record : flatRecords)
+      for (Map< String, Object > record : flatRecords)
       {
         allKeys.addAll(record.keySet());
       }
@@ -101,7 +104,7 @@ public class FileService
         writer.writeNext(header);
       }
 
-      for (Map<String, Object> record : flatRecords)
+      for (Map< String, Object > record : flatRecords)
       {
         String[] line = new String[header.length];
         for (int i = 0; i < header.length; ++i)
@@ -118,10 +121,10 @@ public class FileService
     }
   }
 
-  private List<AggregatedRecord> readRecordsFromJson(Path path) throws IOException
+  private List< AggregatedRecord > readRecordsFromJson(Path path) throws IOException
   {
     ArrayNode array = jsonUtil.readArray(path);
-    List<AggregatedRecord> list = new ArrayList<>();
+    List< AggregatedRecord > list = new ArrayList<>();
     for (JsonNode node : array)
     {
       String id = node.path("id").asText();
@@ -133,7 +136,7 @@ public class FileService
     return list;
   }
 
-  public List<String[]> readRawCsv(Path path) throws FileProcessingException
+  public List< String[] > readRawCsv(Path path) throws FileProcessingException
   {
     try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
     {
@@ -145,7 +148,7 @@ public class FileService
     }
   }
 
-  public List<AggregatedRecord> readRecords(String filePath, String format) throws FileProcessingException
+  public List< AggregatedRecord > readRecords(String filePath, String format) throws FileProcessingException
   {
     Path path = Paths.get(filePath);
     if (!Files.exists(path))

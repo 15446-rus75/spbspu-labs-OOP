@@ -20,7 +20,7 @@ public abstract class AbstractApiClient implements ApiClient
     this.jsonUtil = jsonUtil;
   }
 
-  protected abstract String buildUrl(Map<String, String> queryParams);
+  protected abstract String buildUrl(Map< String, String > queryParams);
 
   protected JsonNode extractData(JsonNode root)
   {
@@ -28,7 +28,7 @@ public abstract class AbstractApiClient implements ApiClient
   }
 
   @Override
-  public ApiResponse fetchData(Map<String, String> queryParams) throws ApiException
+  public ApiResponse fetchData(Map< String, String > queryParams) throws ApiException
   {
     try
     {

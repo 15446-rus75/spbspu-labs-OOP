@@ -11,11 +11,11 @@ import java.util.*;
 
 public class ApiService
 {
-  private final Map<String, ApiClient> clients = new HashMap<>();
+  private final Map< String, ApiClient > clients = new HashMap<>();
   private final HttpClientUtil httpClient;
   private final JsonUtil jsonUtil;
 
-  public ApiService(List<ApiClient> clientList, HttpClientUtil httpClient, JsonUtil jsonUtil)
+  public ApiService(List< ApiClient > clientList, HttpClientUtil httpClient, JsonUtil jsonUtil)
   {
     for (ApiClient client : clientList)
     {
@@ -25,7 +25,7 @@ public class ApiService
     this.jsonUtil = jsonUtil;
   }
 
-  public List<String> getAvailableApiNames()
+  public List< String > getAvailableApiNames()
   {
     return new ArrayList<>(clients.keySet());
   }
@@ -35,9 +35,9 @@ public class ApiService
     return clients.get(name);
   }
 
-  public List<AggregatedRecord> fetchDataFromApis(List<String> apiNames, Map<String, Map<String, String>> params)
+  public List< AggregatedRecord > fetchDataFromApis(List< String > apiNames, Map< String, Map< String, String > > params)
   {
-    List<AggregatedRecord> records = new ArrayList<>();
+    List< AggregatedRecord > records = new ArrayList<>();
     for (String name : apiNames)
     {
       ApiClient client = clients.get(name);
@@ -47,7 +47,7 @@ public class ApiService
       }
       try
       {
-        Map<String, String> queryParams = params.getOrDefault(name, new HashMap<>());
+        Map< String, String > queryParams = params.getOrDefault(name, new HashMap<>());
         ApiResponse response = client.fetchData(queryParams);
         records.add(new AggregatedRecord(name, response.getTimestamp(), response.getData()));
       }
