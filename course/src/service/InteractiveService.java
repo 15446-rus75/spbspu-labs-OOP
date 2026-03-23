@@ -27,12 +27,9 @@ public class InteractiveService
   public void runAutoMode(String apisParam, String format, String outputFile)
   {
     List<String> apiNames;
-    if (apisParam.equalsIgnoreCase("all"))
-    {
+    if (apisParam.equalsIgnoreCase("all")) {
       apiNames = apiService.getAvailableApiNames();
-    }
-    else
-    {
+    } else {
       apiNames = Arrays.stream(apisParam.split(","))
                 .map(String::trim)
                 .filter(name -> apiService.getAvailableApiNames().contains(name))
@@ -125,15 +122,39 @@ public class InteractiveService
         if (dataIdx != -1)
         {
           List<AggregatedRecord> records = new ArrayList<>();
+          int idIdx = indexOf(header, "id");
+          int srcIdx = indexOf(header, "source");
+          int tsIdx = indexOf(header, "timestamp");
+          if (idIdx == -1 || srcIdx == -1 || tsIdx == -1)
+          {
+            System.err.println("CSV файл не содержит обязательных колонок (id, source, timestamp)");
+            return;
+          }
           for (int i = 1; i < lines.size(); i++)
           {
             String[] row = lines.get(i);
-            String id = row[indexOf(header, "id")];
-            String source = row[indexOf(header, "source")];
-            Instant timestamp = Instant.parse(row[indexOf(header, "timestamp")]);
+            if (row.length <= Math.max(Math.max(idIdx, srcIdx), Math.max(tsIdx, dataIdx)))
+            {
+              System.err.println("Строка " + (i+1) + " имеет недостаточно колонок, пропускаем");
+              continue;
+            }
+            String id = row[idIdx];
+            String source = row[srcIdx];
+            String timestampStr = row[tsIdx];
+            Instant timestamp;
+            try {
+              timestamp = Instant.parse(timestampStr);
+            } catch (Exception e) {
+              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
+              continue;
+            }
             String dataJson = row[dataIdx];
-            var data = jsonUtil.parse(dataJson);
-            records.add(new AggregatedRecord(id, source, timestamp, data));
+            try {
+              var data = jsonUtil.parse(dataJson);
+              records.add(new AggregatedRecord(id, source, timestamp, data));
+            } catch (Exception e) {
+              System.err.println("Ошибка парсинга JSON в строке " + (i+1) + ", запись пропущена");
+            }
           }
           if (sourceFilter == null)
             printer.printAll(records);
@@ -143,21 +164,49 @@ public class InteractiveService
         else
         {
           List<AggregatedRecord> records = new ArrayList<>();
+          int idIdx = indexOf(header, "id");
+          int srcIdx = indexOf(header, "source");
+          int tsIdx = indexOf(header, "timestamp");
+          if (idIdx == -1 || srcIdx == -1 || tsIdx == -1)
+          {
+            System.err.println("CSV файл не содержит обязательных колонок (id, source, timestamp)");
+            return;
+          }
           for (int i = 1; i < lines.size(); i++)
           {
             String[] row = lines.get(i);
+            if (row.length <= Math.max(idIdx, Math.max(srcIdx, tsIdx)))
+            {
+              System.err.println("Строка " + (i+1) + " имеет недостаточно колонок, пропускаем");
+              continue;
+            }
             Map<String, Object> flat = new HashMap<>();
             for (int j = 0; j < header.length; j++)
             {
-              flat.put(header[j], row[j]);
+              String value = (j < row.length) ? row[j] : "";
+              flat.put(header[j], value);
             }
             String source = (String) flat.get("source");
             String id = (String) flat.get("id");
-            Instant timestamp = Instant.parse((String) flat.get("timestamp"));
+            String timestampStr = (String) flat.get("timestamp");
+            Instant timestamp;
+            try {
+              timestamp = Instant.parse(timestampStr);
+            } catch (Exception e) {
+              System.err.println("Ошибка парсинга timestamp '" + timestampStr + "' в строке " + (i+1) + ", запись пропущена");
+              continue;
+            }
             ApiClient client = apiService.getClient(source);
-            if (client == null) continue;
-            var data = client.unflatten(flat);
-            records.add(new AggregatedRecord(id, source, timestamp, data));
+            if (client == null) {
+              System.err.println("Неизвестный источник '" + source + "' в строке " + (i+1) + ", запись пропущена");
+              continue;
+            }
+            try {
+              var data = client.unflatten(flat);
+              records.add(new AggregatedRecord(id, source, timestamp, data));
+            } catch (Exception e) {
+              System.err.println("Ошибка восстановления данных для источника " + source + " в строке " + (i+1) + ": " + e.getMessage());
+            }
           }
           if (sourceFilter == null)
             printer.printAll(records);

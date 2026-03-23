@@ -29,10 +29,7 @@ public class FileService
   public void saveRecordsAsJson(List<AggregatedRecord> records, Path path, boolean append)
             throws FileProcessingException
   {
-    if (records.isEmpty())
-    {
-      return;
-    }
+    if (records.isEmpty()) return;
     boolean fileExists = Files.exists(path);
     try
     {
@@ -53,71 +50,50 @@ public class FileService
   public void saveRecordsAsCsv(List<Map<String, Object>> flatRecords, Path path, boolean append)
             throws FileProcessingException
   {
-    if (flatRecords.isEmpty())
-    {
-      return;
-    }
+    if (flatRecords.isEmpty()) return;
     boolean fileExists = Files.exists(path);
-    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append)))
-    {
-      if (!append || !fileExists)
-      {
-        Set<String> allKeys = new LinkedHashSet<>();
-        allKeys.add("id");
-        allKeys.add("source");
-        allKeys.add("timestamp");
-        for (Map<String, Object> record : flatRecords)
-        {
-          allKeys.addAll(record.keySet());
+
+    String[] header;
+    if (append && fileExists) {
+      try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
+        List<String[]> lines = reader.readAll();
+        if (!lines.isEmpty()) {
+          header = lines.get(0);
+        } else {
+          header = null;
         }
-        String[] header = allKeys.toArray(new String[0]);
+      } catch (IOException | CsvException e) {
+        throw new FileProcessingException("Ошибка чтения заголовка CSV", e);
+      }
+    } else {
+      Set<String> allKeys = new LinkedHashSet<>();
+      allKeys.add("id");
+      allKeys.add("source");
+      allKeys.add("timestamp");
+      for (Map<String, Object> record : flatRecords) {
+        allKeys.addAll(record.keySet());
+      }
+      header = allKeys.toArray(new String[0]);
+    }
+
+    if (header == null) {
+      throw new FileProcessingException("Не удалось определить заголовок CSV");
+    }
+
+    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append))) {
+      if (!append || !fileExists) {
         writer.writeNext(header);
       }
 
-      String[] header = null;
-      if (append && fileExists)
-      {
-        try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
-        {
-          List<String[]> lines = reader.readAll();
-          if (!lines.isEmpty())
-          {
-            header = lines.get(0);
-          }
-        }
-        catch (IOException | CsvException e)
-        {
-          throw new FileProcessingException("Ошибка чтения заголовка CSV", e);
-        }
-      }
-
-      for (Map<String, Object> record : flatRecords)
-      {
-        String[] line;
-        if (header != null)
-        {
-          line = new String[header.length];
-          for (int i = 0; i < header.length; i++)
-          {
-            Object value = record.get(header[i]);
-            line[i] = value != null ? value.toString() : "";
-          }
-        }
-        else
-        {
-          List<String> keys = new ArrayList<>(record.keySet());
-          line = new String[keys.size()];
-          for (int i = 0; i < keys.size(); i++)
-          {
-            Object value = record.get(keys.get(i));
-            line[i] = value != null ? value.toString() : "";
-          }
+      for (Map<String, Object> record : flatRecords) {
+        String[] line = new String[header.length];
+        for (int i = 0; i < header.length; i++) {
+          Object value = record.get(header[i]);
+          line[i] = value != null ? value.toString() : "";
         }
         writer.writeNext(line);
       }
-    }
-    catch (IOException e)
-    {
+    } catch (IOException e) {
       throw new FileProcessingException("Ошибка записи CSV", e);
     }
   }
