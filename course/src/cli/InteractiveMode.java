@@ -74,7 +74,8 @@ public class InteractiveMode
     Map< String, Map< String, String > > params = new HashMap<>();
     for (String api : apisToFetch)
     {
-      System.out.println("Введите параметры для " + api + " (в формате ключ=значение, пусто если нет):");
+      System.out.println("Введите параметры для " + api);
+      printApiParamsHint(api);
       String paramLine = inputHandler.readString("");
       if (!paramLine.isBlank())
       {
@@ -127,6 +128,30 @@ public class InteractiveMode
     {
       System.err.println("Ошибка сохранения: " + e.getMessage());
     }
+  }
+
+  private void printApiParamsHint(String apiName)
+  {
+    switch (apiName.toLowerCase())
+    {
+      case "chucknorris":
+        System.out.println("  Поддерживаемые параметры: category, name");
+        System.out.println("  (параметры необязательны, можно оставить пустым)");
+        System.out.println("Пример: category=animal,name=Chuck");
+        break;
+      case "zippopotam":
+        System.out.println("  Обязательный параметр: zip");
+        System.out.println("Пример: zip=90210");
+        break;
+      case "randomuser":
+        System.out.println("  Возможные параметры: gender (male/female), nat (us,gb,fr и т.д.)");
+        System.out.println("  Пример: gender=male,nat=us");
+        break;
+      default:
+        System.out.println("  (параметры не задокументированы, оставьте пустым)");
+        break;
+    }
+    System.out.print("Введите параметры (ключ=значение, через запятую) или оставьте пустым: ");
   }
 
   private void displayFileContent()
