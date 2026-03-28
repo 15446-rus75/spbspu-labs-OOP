@@ -28,6 +28,31 @@ public class Main
       String apis = cmd.getOptionValue("apis");
       String format = cmd.getOptionValue("format");
       String output = cmd.getOptionValue("output");
+      int maxThreads = 5;
+      long interval = 0;
+
+      if (cmd.hasOption("max-threads"))
+      {
+        try
+        {
+          maxThreads = Integer.parseInt(cmd.getOptionValue("max-threads"));
+        }
+        catch (NumberFormatException e)
+        {
+          System.err.println("Неверное значение для max-threads, используется 5");
+        }
+      }
+      if (cmd.hasOption("interval"))
+      {
+        try
+        {
+          interval = Long.parseLong(cmd.getOptionValue("interval"));
+        }
+        catch (NumberFormatException e)
+        {
+          System.err.println("Неверное значение для interval, используется 0");
+        }
+      }
 
       if (apis == null || format == null || output == null)
       {
@@ -37,7 +62,7 @@ public class Main
       }
 
       InteractiveService interactiveService = new InteractiveService(apiService, fileService, jsonUtil);
-      interactiveService.runAutoMode(apis, format, output);
+      interactiveService.runAutoMode(apis, format, output, maxThreads, interval);
     }
     else
     {
