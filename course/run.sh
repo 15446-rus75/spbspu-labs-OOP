@@ -6,6 +6,8 @@ java -cp "target/api-aggregator-1.0-SNAPSHOT.jar:target/lib/*" main.Main \
   --mode auto \
   --apis chucknorris,zippopotam,randomuser \
   --format json \
-  --output data.json
+  --output data.json \
+  --max-threads 3 \
+  --interval 30
 
 java -cp "target/api-aggregator-1.0-SNAPSHOT.jar:target/lib/*" main.Main "$@"
