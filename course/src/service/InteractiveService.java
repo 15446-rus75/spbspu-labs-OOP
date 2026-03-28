@@ -55,7 +55,7 @@ public class InteractiveService
     {
       pollingController.setMaxThreads(maxThreads);
       pollingController.setInterval(interval);
-      pollingController.startPolling(apiNames, params, format, outputFile, false);
+      pollingController.startPolling(apiNames, params, format, outputFile, true);
       System.out.println("Опрос запущен. Нажмите Enter для остановки...");
       try
       {
@@ -63,13 +63,12 @@ public class InteractiveService
       }
       catch (Exception e)
       {
-        // ignore
       }
       pollingController.stopPolling();
     }
     else
     {
-      List< AggregatedRecord > records = fetchDataFromApisParallel(apiNames, params, maxThreads);
+      List< AggregatedRecord > records = fetchFromApisParallel(apiNames, params, maxThreads);
       if (records.isEmpty())
       {
         System.out.println("Нет полученных данных.");
@@ -88,7 +87,7 @@ public class InteractiveService
     }
   }
 
-  private List< AggregatedRecord > fetchDataFromApisParallel(List< String > apiNames, Map< String, Map< String, String > > params, int maxThreads)
+  public List< AggregatedRecord > fetchFromApisParallel(List< String > apiNames, Map< String, Map< String, String > > params, int maxThreads)
   {
     ExecutorService executor = Executors.newFixedThreadPool(maxThreads);
     List< Future< AggregatedRecord > > futures = new ArrayList<>();

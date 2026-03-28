@@ -37,6 +37,11 @@ public class PollingTask implements Runnable
   @Override
   public void run()
   {
+    if (Thread.currentThread().isInterrupted())
+    {
+      System.err.println("Задача для " + client.getSourceName() + " была прервана до выполнения");
+      return;
+    }
     try
     {
       ApiResponse response = client.fetchData(params);
@@ -65,7 +70,15 @@ public class PollingTask implements Runnable
     }
     catch (Exception e)
     {
-      System.err.println("Непредвиденная ошибка при опросе " + client.getSourceName() + ": " + e.getMessage());
+      if (e instanceof InterruptedException || (e.getCause() instanceof InterruptedException))
+      {
+        System.err.println("Задача для " + client.getSourceName() + " была прервана");
+        Thread.currentThread().interrupt();
+      }
+      else
+      {
+        System.err.println("Непредвиденная ошибка при опросе " + client.getSourceName() + ": " + e.getMessage());
+      }
     }
   }
 }

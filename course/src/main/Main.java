@@ -16,7 +16,7 @@ public class Main
   {
     HttpClientUtil httpClient = new HttpClientUtil();
     JsonUtil jsonUtil = new JsonUtil();
-    AppConfig appConfig = new AppConfig();
+    AppConfig appConfig = new AppConfig(httpClient, jsonUtil);
     ApiService apiService = new ApiService(appConfig.getApiClients(), httpClient, jsonUtil);
     FileService fileService = new FileService(jsonUtil);
 

@@ -44,7 +44,7 @@ public class PollingService
     scheduler.shutdown();
     try
     {
-      if (!scheduler.awaitTermination(5, TimeUnit.SECONDS))
+      if (!scheduler.awaitTermination(10, TimeUnit.SECONDS))
       {
         scheduler.shutdownNow();
       }

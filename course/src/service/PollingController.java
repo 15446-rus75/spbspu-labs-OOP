@@ -2,6 +2,10 @@ package service;
 
 import api.ApiClient;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class PollingController
@@ -55,6 +59,21 @@ public class PollingController
       System.err.println("Максимальное количество задач должно быть положительным.");
       return;
     }
+
+    if (!append)
+    {
+      Path path = Paths.get(outputPath);
+      try
+      {
+        Files.deleteIfExists(path);
+        System.out.println("Файл " + outputPath + " удалён (режим перезаписи).");
+      }
+      catch (IOException e)
+      {
+        System.err.println("Не удалось удалить файл " + outputPath + ": " + e.getMessage());
+      }
+    }
+
     Map< String, ApiClient > apiClients = new HashMap<>();
     for (String name : apiNames)
     {
@@ -69,8 +88,9 @@ public class PollingController
       System.err.println("Нет доступных API для опроса.");
       return;
     }
+
     pollingService = new PollingService(maxThreads, apiService, fileService);
-    pollingService.startPolling(apiClients, params, format, outputPath, append, intervalSeconds);
+    pollingService.startPolling(apiClients, params, format, outputPath, true, intervalSeconds);
     System.out.println("Опрос запущен с интервалом " + intervalSeconds + " сек и максимальным количеством одновременных задач " + maxThreads);
   }
 

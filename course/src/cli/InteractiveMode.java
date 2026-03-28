@@ -115,7 +115,8 @@ public class InteractiveMode
       }
     }
 
-    List< AggregatedRecord > records = interactiveService.fetchFromApis(apisToFetch, params);
+    int maxThreads = interactiveService.getPollingController().getMaxThreads();
+    List< AggregatedRecord > records = interactiveService.fetchFromApisParallel(apisToFetch, params, maxThreads);
     if (records.isEmpty())
     {
       System.out.println("Нет полученных данных.");
