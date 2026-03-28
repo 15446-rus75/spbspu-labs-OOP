@@ -28,7 +28,7 @@ public class FileService
     this.jsonUtil = jsonUtil;
   }
 
-  public void saveRecordsAsJson(List< AggregatedRecord > records, Path path, boolean append)
+  public synchronized void saveRecordsAsJson(List< AggregatedRecord > records, Path path, boolean append)
             throws FileProcessingException
   {
     if (records.isEmpty())
@@ -52,7 +52,7 @@ public class FileService
     }
   }
 
-  public void saveRecordsAsCsv(List< Map< String, Object > > flatRecords, Path path, boolean append)
+  public synchronized void saveRecordsAsCsv(List< Map< String, Object > > flatRecords, Path path, boolean append)
             throws FileProcessingException
   {
     if (flatRecords.isEmpty())
