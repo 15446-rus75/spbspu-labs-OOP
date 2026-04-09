@@ -22,104 +22,113 @@ import java.util.stream.Collectors;
 public class FileService
 {
   private final JsonUtil jsonUtil;
+  // Синхронизация на уровне класса для гарантии атомарности операций чтения-записи файла
+  // при использовании нескольких экземпляров FileService в многопоточной среде
+  private static final Object fileLock = new Object();
 
   public FileService(JsonUtil jsonUtil)
   {
     this.jsonUtil = jsonUtil;
   }
 
-  public synchronized void saveRecordsAsJson(List< AggregatedRecord > records, Path path, boolean append)
+  public void saveRecordsAsJson(List< AggregatedRecord > records, Path path, boolean append)
             throws FileProcessingException
   {
     if (records.isEmpty())
     {
       return;
     }
-    boolean fileExists = Files.exists(path);
-    try
+    synchronized (fileLock)
     {
-      List< AggregatedRecord > existing = new ArrayList<>();
-      if (append && fileExists)
+      boolean fileExists = Files.exists(path);
+      try
       {
-        existing = readRecordsFromJson(path);
+        List< AggregatedRecord > existing = new ArrayList<>();
+        if (append && fileExists)
+        {
+          existing = readRecordsFromJson(path);
+        }
+        existing.addAll(records);
+        jsonUtil.write(path, existing.stream().map(AggregatedRecord::toJson).collect(Collectors.toList()));
       }
-      existing.addAll(records);
-      jsonUtil.write(path, existing.stream().map(AggregatedRecord::toJson).collect(Collectors.toList()));
-    }
-    catch (IOException e)
-    {
-      throw new FileProcessingException("Ошибка записи JSON", e);
+      catch (IOException e)
+      {
+        throw new FileProcessingException("Ошибка записи JSON", e);
+      }
     }
   }
 
-  public synchronized void saveRecordsAsCsv(List< Map< String, Object > > flatRecords, Path path, boolean append)
+  public void saveRecordsAsCsv(List< Map< String, Object > > flatRecords, Path path, boolean append)
             throws FileProcessingException
   {
     if (flatRecords.isEmpty())
     {
       return;
     }
-    boolean fileExists = Files.exists(path);
-
-    String[] header;
-    if (append && fileExists)
+    synchronized (fileLock)
     {
-      try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
+      boolean fileExists = Files.exists(path);
+
+      String[] header;
+      if (append && fileExists)
       {
-        List< String[] > lines = reader.readAll();
-        if (!lines.isEmpty())
+        try (CSVReader reader = new CSVReader(new FileReader(path.toFile())))
         {
-          header = lines.get(0);
+          List< String[] > lines = reader.readAll();
+          if (!lines.isEmpty())
+          {
+            header = lines.get(0);
+          }
+          else
+          {
+            header = null;
+          }
         }
-        else
+        catch (IOException | CsvException e)
         {
-          header = null;
+          throw new FileProcessingException("Ошибка чтения заголовка CSV", e);
         }
       }
-      catch (IOException | CsvException e)
+      else
       {
-        throw new FileProcessingException("Ошибка чтения заголовка CSV", e);
-      }
-    }
-    else
-    {
-      Set< String > allKeys = new LinkedHashSet<>();
-      allKeys.add("id");
-      allKeys.add("source");
-      allKeys.add("timestamp");
-      for (Map< String, Object > record : flatRecords)
-      {
-        allKeys.addAll(record.keySet());
-      }
-      header = allKeys.toArray(new String[0]);
-    }
-
-    if (header == null)
-    {
-      throw new FileProcessingException("Не удалось определить заголовок CSV");
-    }
-
-    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append)))
-    {
-      if (!append || !fileExists)
-      {
-        writer.writeNext(header);
-      }
-
-      for (Map< String, Object > record : flatRecords)
-      {
-        String[] line = new String[header.length];
-        for (int i = 0; i < header.length; ++i)
+        Set< String > allKeys = new LinkedHashSet<>();
+        allKeys.add("id");
+        allKeys.add("source");
+        allKeys.add("timestamp");
+        for (Map< String, Object > record : flatRecords)
         {
-          Object value = record.get(header[i]);
-          line[i] = value != null ? value.toString() : "";
+          allKeys.addAll(record.keySet());
         }
-        writer.writeNext(line);
+        header = allKeys.toArray(new String[0]);
       }
-    }
-    catch (IOException e)
-    {
-      throw new FileProcessingException("Ошибка записи CSV", e);
+
+      if (header == null)
+      {
+        throw new FileProcessingException("Не удалось определить заголовок CSV");
+      }
+
+      try (CSVWriter writer = new CSVWriter(new FileWriter(path.toFile(), append)))
+      {
+        if (!append || !fileExists)
+        {
+          writer.writeNext(header);
+        }
+
+        for (Map< String, Object > record : flatRecords)
+        {
+          String[] line = new String[header.length];
+          for (int i = 0; i < header.length; ++i)
+          {
+            Object value = record.get(header[i]);
+            line[i] = value != null ? value.toString() : "";
+          }
+          writer.writeNext(line);
+        }
+      }
+      catch (IOException e)
+      {
+        throw new FileProcessingException("Ошибка записи CSV", e);
+      }
     }
   }
 
