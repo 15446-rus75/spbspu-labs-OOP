@@ -91,58 +91,65 @@ public class InteractiveService
   {
     ExecutorService executor = Executors.newFixedThreadPool(maxThreads);
     List< Future< AggregatedRecord > > futures = new ArrayList<>();
-    for (String name : apiNames)
-    {
-      ApiClient client = apiService.getClient(name);
-      if (client == null)
-      {
-        System.err.println("Предупреждение: API '" + name + "' не найден");
-        continue;
-      }
-      Map< String, String > queryParams = params.getOrDefault(name, new HashMap<>());
-      futures.add(executor.submit(() -> {
-        try
-        {
-          ApiResponse response = client.fetchData(queryParams);
-          return new AggregatedRecord(name, response.getTimestamp(), response.getData());
-        }
-        catch (ApiException e)
-        {
-          System.err.println("Ошибка при получении данных от " + name + ": " + e.getMessage());
-          return null;
-        }
-      }));
-    }
-
-    List< AggregatedRecord > records = new ArrayList<>();
-    for (Future< AggregatedRecord > future : futures)
-    {
-      try
-      {
-        AggregatedRecord record = future.get();
-        if (record != null)
-        {
-          records.add(record);
-        }
-      }
-      catch (InterruptedException | ExecutionException e)
-      {
-        System.err.println("Ошибка при получении результата: " + e.getMessage());
-      }
-    }
-    executor.shutdown();
     try
     {
-      if (!executor.awaitTermination(5, TimeUnit.SECONDS))
+      for (String name : apiNames)
+      {
+        ApiClient client = apiService.getClient(name);
+        if (client == null)
+        {
+          System.err.println("Предупреждение: API '" + name + "' не найден");
+          continue;
+        }
+        Map< String, String > queryParams = params.getOrDefault(name, new HashMap<>());
+        futures.add(executor.submit(() -> {
+          try
+          {
+            ApiResponse response = client.fetchData(queryParams);
+            return new AggregatedRecord(name, response.getTimestamp(), response.getData());
+          }
+          catch (ApiException e)
+          {
+            System.err.println("Ошибка при получении данных от " + name + ": " + e.getMessage());
+            return null;
+          }
+        }));
+      }
+
+      List< AggregatedRecord > records = new ArrayList<>();
+      for (Future< AggregatedRecord > future : futures)
+      {
+        try
+        {
+          AggregatedRecord record = future.get();
+          if (record != null)
+          {
+            records.add(record);
+          }
+        }
+        catch (InterruptedException | ExecutionException e)
+        {
+          System.err.println("Ошибка при получении результата: " + e.getMessage());
+        }
+      }
+      return records;
+    }
+    finally
+    {
+      executor.shutdown();
+      try
+      {
+        if (!executor.awaitTermination(5, TimeUnit.SECONDS))
+        {
+          executor.shutdownNow();
+        }
+      }
+      catch (InterruptedException e)
       {
         executor.shutdownNow();
+        Thread.currentThread().interrupt();
       }
     }
-    catch (InterruptedException e)
-    {
-      executor.shutdownNow();
-    }
-    return records;
   }
 
   public List< AggregatedRecord > fetchFromApis(List< String > apiNames, Map< String, Map< String, String > > params)
