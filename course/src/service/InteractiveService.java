@@ -55,7 +55,7 @@ public class InteractiveService
     {
       pollingController.setMaxThreads(maxThreads);
       pollingController.setInterval(interval);
-      pollingController.startPolling(apiNames, params, format, outputFile, true);
+      pollingController.startPolling(apiNames, params, format, outputFile, false);
       System.out.println("Опрос запущен. Нажмите Enter для остановки...");
       try
       {
