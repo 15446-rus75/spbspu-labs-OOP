@@ -29,6 +29,16 @@ public class CommandLineParser
                 .hasArg()
                 .desc("Выходной файл")
                 .build());
+    options.addOption(Option.builder("n")
+                .longOpt("max-threads")
+                .hasArg()
+                .desc("Максимальное количество одновременно выполняемых задач")
+                .build());
+    options.addOption(Option.builder("t")
+                .longOpt("interval")
+                .hasArg()
+                .desc("Интервал опроса источников в секундах (0 - однократно)")
+                .build());
   }
 
   public CommandLine parse(String[] args)

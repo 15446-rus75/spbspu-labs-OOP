@@ -14,11 +14,8 @@ public class AppConfig
 {
   private final List< ApiClient > apiClients;
 
-  public AppConfig()
+  public AppConfig(HttpClientUtil httpClient, JsonUtil jsonUtil)
   {
-    HttpClientUtil httpClient = new HttpClientUtil();
-    JsonUtil jsonUtil = new JsonUtil();
-
     apiClients = new ArrayList<>();
     apiClients.add(new ChuckNorrisClient(httpClient, jsonUtil));
     apiClients.add(new ZipCodeClient(httpClient, jsonUtil));

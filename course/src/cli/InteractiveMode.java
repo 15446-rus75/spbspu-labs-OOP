@@ -34,7 +34,10 @@ public class InteractiveMode
       {
         case 1 -> fetchAndSave();
         case 2 -> displayFileContent();
-        case 3 -> exit = true;
+        case 3 -> configurePolling();
+        case 4 -> startPolling();
+        case 5 -> stopPolling();
+        case 6 -> exit = true;
         default -> System.out.println("Неверный ввод, попробуйте снова.");
       }
     }
@@ -44,9 +47,18 @@ public class InteractiveMode
   private void printMenu()
   {
     System.out.println("\n--- Меню ---");
-    System.out.println("1. Опрос API и сохранение в файл");
+    System.out.println("1. Опрос API и сохранение в файл (однократно)");
     System.out.println("2. Вывести содержимое файла");
-    System.out.println("3. Выход");
+    System.out.println("3. Настройки периодического опроса");
+    System.out.println("4. Запустить периодический опрос");
+    System.out.println("5. Остановить периодический опрос");
+    System.out.println("6. Выход");
+    System.out.println("Текущие настройки: задачи=" + interactiveService.getPollingController().getMaxThreads() +
+                       ", интервал=" + interactiveService.getPollingController().getInterval() + " сек");
+    if (interactiveService.getPollingController().isPolling())
+    {
+      System.out.println("** Опрос активен **");
+    }
   }
 
   private void fetchAndSave()
@@ -103,7 +115,8 @@ public class InteractiveMode
       }
     }
 
-    List< AggregatedRecord > records = interactiveService.fetchFromApis(apisToFetch, params);
+    int maxThreads = interactiveService.getPollingController().getMaxThreads();
+    List< AggregatedRecord > records = interactiveService.fetchFromApisParallel(apisToFetch, params, maxThreads);
     if (records.isEmpty())
     {
       System.out.println("Нет полученных данных.");
@@ -165,5 +178,107 @@ public class InteractiveMode
     String filter = inputHandler.readString("Вывести всё (введите 'all') или укажите конкретный источник: ");
     String source = filter.equalsIgnoreCase("all") ? null : filter;
     interactiveService.displayRecords(filePath, format, source);
+  }
+
+  private void configurePolling()
+  {
+    int maxThreads = inputHandler.readInt("Максимальное количество одновременно выполняемых задач: ");
+    while (maxThreads <= 0)
+    {
+      System.out.println("Значение должно быть положительным.");
+      maxThreads = inputHandler.readInt("Максимальное количество одновременно выполняемых задач: ");
+    }
+    long interval = inputHandler.readInt("Интервал опроса в секундах (0 - однократно): ");
+    while (interval < 0)
+    {
+      System.out.println("Интервал не может быть отрицательным.");
+      interval = inputHandler.readInt("Интервал опроса в секундах: ");
+    }
+    interactiveService.getPollingController().setMaxThreads(maxThreads);
+    interactiveService.getPollingController().setInterval(interval);
+    System.out.println("Настройки сохранены.");
+  }
+
+  private void startPolling()
+  {
+    if (interactiveService.getPollingController().isPolling())
+    {
+      System.out.println("Опрос уже запущен. Остановите его перед новым запуском.");
+      return;
+    }
+    long interval = interactiveService.getPollingController().getInterval();
+    if (interval <= 0)
+    {
+      System.out.println("Интервал опроса не задан или равен 0. Настройте интервал в меню 3.");
+      return;
+    }
+
+    System.out.println("Доступные API: " + availableApis);
+    String chosen = inputHandler.readString("Введите названия API через запятую (или 'all' для всех): ");
+    List< String > apisToFetch;
+    if (chosen.equalsIgnoreCase("all"))
+    {
+      apisToFetch = new ArrayList<>(availableApis);
+    }
+    else
+    {
+      apisToFetch = Arrays.stream(chosen.split(","))
+                    .map(String::trim)
+                    .filter(availableApis::contains)
+                    .toList();
+      if (apisToFetch.isEmpty())
+      {
+        System.out.println("Не выбрано ни одного доступного API.");
+        return;
+      }
+    }
+
+    Map< String, Map< String, String > > params = new HashMap<>();
+    for (String api : apisToFetch)
+    {
+      System.out.println("Введите параметры для " + api);
+      printApiParamsHint(api);
+      String paramLine = inputHandler.readString("");
+      if (!paramLine.isBlank())
+      {
+        Map< String, String > map = new HashMap<>();
+        String[] pairs = paramLine.split(",");
+        for (String pair : pairs)
+        {
+          pair = pair.trim();
+          if (pair.isEmpty())
+          {
+            continue;
+          }
+          String[] kv = pair.split("=");
+          if (kv.length == 2)
+          {
+            String key = kv[0].trim();
+            String value = kv[1].trim();
+            if (!key.isEmpty())
+            {
+              map.put(key, value);
+            }
+          }
+        }
+        params.put(api, map);
+      }
+    }
+
+    String format = inputHandler.readString("Формат файла (json/csv): ");
+    while (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv"))
+    {
+      format = inputHandler.readString("Неверный формат. Введите json или csv: ");
+    }
+
+    String filePath = inputHandler.readString("Путь к файлу: ");
+    boolean append = inputHandler.readBoolean("Дозаписать в существующий файл? (y/n): ");
+
+    interactiveService.getPollingController().startPolling(apisToFetch, params, format, filePath, append);
+  }
+
+  private void stopPolling()
+  {
+    interactiveService.getPollingController().stopPolling();
   }
 }

@@ -52,6 +52,7 @@ public abstract class AbstractApiClient implements ApiClient
     }
     catch (IOException e)
     {
+      System.err.println("Ошибка при запросе к " + getSourceName() + ": " + e.getMessage());
       throw new ApiException("Ошибка при запросе к " + getSourceName() + ": " + e.getMessage(), e);
     }
   }

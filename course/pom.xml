@@ -72,7 +72,8 @@
 
   <build>
     <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>src</testSourceDirectory>
+    <testSourceDirectory>src/test</testSourceDirectory>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -81,9 +82,9 @@
         <configuration>
           <source>17</source>
           <target>17</target>
-          <includes>
-            <include>**/*.java</include>
-          </includes>
+          <excludes>
+            <exclude>src/test/**/*.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
 
