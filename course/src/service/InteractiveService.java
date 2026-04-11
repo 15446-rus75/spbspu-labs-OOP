@@ -147,7 +147,6 @@ public class InteractiveService
       catch (InterruptedException e)
       {
         executor.shutdownNow();
-        Thread.currentThread().interrupt();
       }
     }
   }

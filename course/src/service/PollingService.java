@@ -52,7 +52,6 @@ public class PollingService
     catch (InterruptedException e)
     {
       scheduler.shutdownNow();
-      Thread.currentThread().interrupt();
     }
   }
 
