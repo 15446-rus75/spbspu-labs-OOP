@@ -23,10 +23,8 @@ import static org.mockito.Mockito.when;
 
 class FileServiceTest
 {
-
   @TempDir
   Path tempDir;
-
   private FileService fileService;
   private JsonUtil jsonUtil;
   private ObjectMapper mapper;
@@ -49,8 +47,8 @@ class FileServiceTest
     AggregatedRecord record = new AggregatedRecord("testSource", Instant.now(), data);
 
     fileService.saveRecordsAsJson(List.of(record), file, false);
-    List<AggregatedRecord> read = fileService.readRecords(file.toString(), "json");
 
+    List< AggregatedRecord > read = fileService.readRecords(file.toString(), "json");
     assertEquals(1, read.size());
     AggregatedRecord loaded = read.get(0);
     assertEquals("testSource", loaded.getSource());
@@ -69,7 +67,7 @@ class FileServiceTest
     fileService.saveRecordsAsJson(List.of(record1), file, false);
     fileService.saveRecordsAsJson(List.of(record2), file, true);
 
-    List<AggregatedRecord> read = fileService.readRecords(file.toString(), "json");
+    List< AggregatedRecord > read = fileService.readRecords(file.toString(), "json");
     assertEquals(2, read.size());
     assertEquals(1, read.get(0).getData().path("id").asInt());
     assertEquals(2, read.get(1).getData().path("id").asInt());
@@ -79,26 +77,23 @@ class FileServiceTest
   void saveCsvAndReadViaApiService_shouldRestoreData() throws Exception
   {
     Path file = tempDir.resolve("test.csv");
-
-    ApiClient mockClient = mock(ApiClient.class);
-    when(mockClient.getSourceName()).thenReturn("testApi");
-    when(apiServiceMock.getClient("testApi")).thenReturn(mockClient);
+    ApiClient mockClient = setupMockClient("testApi");
 
     ObjectNode originalData = mapper.createObjectNode().put("value", "test");
     AggregatedRecord record = new AggregatedRecord("testApi", Instant.now(), originalData);
 
-    Map<String, Object> flatMap = new LinkedHashMap<>();
-    flatMap.put("custom_field", "test_value");
+    Map< String, Object > flatMap = createFlatMap();
     when(mockClient.flattenResponse(any(ApiResponse.class))).thenReturn(flatMap);
     when(mockClient.unflatten(any())).thenReturn(originalData);
 
-    Map<String, Object> flat = new LinkedHashMap<>(flatMap);
+    Map< String, Object > flat = new LinkedHashMap<>(flatMap);
     flat.put("id", record.getId());
     flat.put("source", record.getSource());
     flat.put("timestamp", record.getTimestamp().toString());
+
     fileService.saveRecordsAsCsv(List.of(flat), file, false);
 
-    List<AggregatedRecord> read = fileService.readCsvRecords(file, apiServiceMock);
+    List< AggregatedRecord > read = fileService.readCsvRecords(file, apiServiceMock);
     assertEquals(1, read.size());
     AggregatedRecord loaded = read.get(0);
     assertEquals("testApi", loaded.getSource());
@@ -109,15 +104,12 @@ class FileServiceTest
   void readCsvRecords_withDataColumn_shouldParseCorrectly() throws Exception
   {
     Path file = tempDir.resolve("test_with_data.csv");
-    String csvContent = "id,source,timestamp,data\n"
-            + "1,testApi,2024-01-01T00:00:00Z,\"{\"\"value\"\":\"\"test\"\"}\"\n";
+    String csvContent = "id,source,timestamp,data\n" +
+        "1,testApi,2024-01-01T00:00:00Z,\"{\\\"value\\\":\\\"test\\\"}\"\n";
     Files.writeString(file, csvContent);
+    setupMockClient("testApi");
 
-    ApiClient mockClient = mock(ApiClient.class);
-    when(mockClient.getSourceName()).thenReturn("testApi");
-    when(apiServiceMock.getClient("testApi")).thenReturn(mockClient);
-
-    List<AggregatedRecord> records = fileService.readCsvRecords(file, apiServiceMock);
+    List< AggregatedRecord > records = fileService.readCsvRecords(file, apiServiceMock);
     assertEquals(1, records.size());
     AggregatedRecord rec = records.get(0);
     assertEquals("testApi", rec.getSource());
@@ -127,7 +119,7 @@ class FileServiceTest
   @Test
   void readRecords_shouldReturnEmptyListForNonExistentFile() throws Exception
   {
-    List<AggregatedRecord> records = fileService.readRecords("nonexistent.json", "json");
+    List< AggregatedRecord > records = fileService.readRecords("nonexistent.json", "json");
     assertTrue(records.isEmpty());
   }
 
@@ -138,14 +130,16 @@ class FileServiceTest
     Files.writeString(file, "dummy content");
 
     assertThrows(FileProcessingException.class, () ->
-      fileService.readRecords(file.toString(), "txt"));
+        fileService.readRecords(file.toString(), "txt"));
   }
 
   @Test
   void saveRecordsAsJson_emptyList_shouldDoNothing() throws Exception
   {
     Path file = tempDir.resolve("empty.json");
+
     fileService.saveRecordsAsJson(Collections.emptyList(), file, false);
+
     assertFalse(Files.exists(file));
   }
 
@@ -153,7 +147,24 @@ class FileServiceTest
   void saveRecordsAsCsv_emptyList_shouldDoNothing() throws Exception
   {
     Path file = tempDir.resolve("empty.csv");
+
     fileService.saveRecordsAsCsv(Collections.emptyList(), file, false);
+
     assertFalse(Files.exists(file));
+  }
+
+  private ApiClient setupMockClient(String apiName)
+  {
+    ApiClient mockClient = mock(ApiClient.class);
+    when(mockClient.getSourceName()).thenReturn(apiName);
+    when(apiServiceMock.getClient(apiName)).thenReturn(mockClient);
+    return mockClient;
+  }
+
+  private Map<String, Object> createFlatMap()
+  {
+    Map< String, Object > flatMap = new LinkedHashMap<>();
+    flatMap.put("custom_field", "test_value");
+    return flatMap;
   }
 }
