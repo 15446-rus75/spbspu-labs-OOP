@@ -75,14 +75,7 @@ class InteractiveModeTest
     String input = "6\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    Thread thread = new Thread(mode::start);
-    thread.start();
-    Thread.sleep(500);
-    if (thread.isAlive())
-    {
-      thread.interrupt();
-    }
-    assertFalse(thread.isAlive());
+    executeWithTimeout(mode, 500);
   }
 
   @Test
@@ -95,7 +88,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController).setMaxThreads(10);
     verify(pollingController).setInterval(60L);
@@ -112,7 +105,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
   }
@@ -126,7 +119,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController, never()).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
   }
@@ -141,7 +134,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController, never()).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
   }
@@ -155,7 +148,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController).stopPolling();
   }
@@ -170,7 +163,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController).setMaxThreads(8);
   }
@@ -185,7 +178,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeAndInterrupt(mode);
+    executeWithTimeout(mode, 1000);
 
     verify(pollingController).setInterval(60L);
   }
@@ -196,22 +189,7 @@ class InteractiveModeTest
     String input = "1\nunknown_api\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    Thread thread = new Thread(() ->
-    {
-      try
-      {
-        mode.start();
-      }
-      catch (Exception e)
-      {
-      }
-    });
-    thread.start();
-    Thread.sleep(1000);
-    if (thread.isAlive())
-    {
-      thread.interrupt();
-    }
+    executeWithTimeout(mode, 1000);
   }
 
   @Test
@@ -220,25 +198,10 @@ class InteractiveModeTest
     String input = "2\nfile.json\ninvalid\njson\nall\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    Thread thread = new Thread(() ->
-    {
-      try
-      {
-        mode.start();
-      }
-      catch (Exception e)
-      {
-      }
-    });
-    thread.start();
-    Thread.sleep(1000);
-    if (thread.isAlive())
-    {
-      thread.interrupt();
-    }
+    executeWithTimeout(mode, 1000);
   }
 
-  private void executeAndInterrupt(InteractiveMode mode)
+  private void executeWithTimeout(InteractiveMode mode, long timeoutMs) throws InterruptedException
   {
     Thread thread = new Thread(() ->
     {
@@ -251,14 +214,7 @@ class InteractiveModeTest
       }
     });
     thread.start();
-    try
-    {
-      Thread.sleep(1000);
-    }
-    catch (InterruptedException e)
-    {
-      Thread.currentThread().interrupt();
-    }
+    Thread.sleep(timeoutMs);
     if (thread.isAlive())
     {
       thread.interrupt();
