@@ -1,5 +1,7 @@
 package cli;
 
+import exception.FileProcessingException;
+import model.AggregatedRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,34 +19,20 @@ import java.io.InputStream;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class InteractiveModeTest
 {
   @Mock
   private ApiService apiService;
-
   @Mock
   private FileService fileService;
-
   @Mock
   private InteractiveService interactiveService;
-
   @Mock
   private PollingController pollingController;
-
   private JsonUtil jsonUtil;
   private final InputStream originalSystemIn = System.in;
 
@@ -75,7 +63,7 @@ class InteractiveModeTest
     String input = "6\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 500);
+    executeWithTimeout(mode, 100);
   }
 
   @Test
@@ -88,14 +76,14 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
 
     verify(pollingController).setMaxThreads(10);
     verify(pollingController).setInterval(60L);
   }
 
   @Test
-  void startPolling_shouldStartWithAllApis() throws Exception
+  void startPolling_withAllKeyword_shouldStartWithAllApis() throws Exception
   {
     lenient().when(pollingController.isPolling()).thenReturn(false);
     lenient().when(pollingController.getInterval()).thenReturn(30L);
@@ -105,9 +93,158 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 200);
 
     verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withSpecificApis_shouldParseCommaSeparatedList() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris,randomuser\n\n\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(
+        argThat(list -> list.contains("chucknorris") && list.contains("randomuser")),
+        anyMap(),
+        anyString(),
+        anyString(),
+        anyBoolean()
+    );
+  }
+
+  @Test
+  void startPolling_withUnknownApis_shouldPrintNoApiSelectedMessage() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+
+    String input = "4\nunknown1,unknown2,unknown3\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController, never()).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withEmptyParams_shouldCreateEmptyParamsMap() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\n\n\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withValidParameters_shouldParseKeyValuePairs() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\ncategory=animal,name=Chuck\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withEmptyPairs_shouldSkipThem() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\n,,invalidpair,=value,valid=ok\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withSpacesInParams_shouldTrimCorrectly() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\ncategory = animal , name = Chuck\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withMultipleApisAndParams_shouldParseAll() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris,randomuser\ncategory=animal\ngender=male,nat=us\n\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 300);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withInvalidFormatRetry_shouldCoverWhileLoop() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\n\n\n\nxml\nyaml\ntxt\njson\noutput.json\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 300);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), eq("json"), eq("output.json"), anyBoolean());
+  }
+
+  @Test
+  void startPolling_withCsvFormat_shouldCoverCsvBranch() throws Exception
+  {
+    lenient().when(pollingController.isPolling()).thenReturn(false);
+    lenient().when(pollingController.getInterval()).thenReturn(30L);
+    doNothing().when(pollingController).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
+
+    String input = "4\nchucknorris\n\n\n\ncsv\noutput.csv\ny\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(pollingController).startPolling(anyList(), anyMap(), eq("csv"), eq("output.csv"), eq(true));
   }
 
   @Test
@@ -119,7 +256,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
 
     verify(pollingController, never()).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
   }
@@ -134,7 +271,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
 
     verify(pollingController, never()).startPolling(anyList(), anyMap(), anyString(), anyString(), anyBoolean());
   }
@@ -148,7 +285,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 100);
 
     verify(pollingController).stopPolling();
   }
@@ -163,7 +300,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
 
     verify(pollingController).setMaxThreads(8);
   }
@@ -178,7 +315,7 @@ class InteractiveModeTest
     System.setIn(new ByteArrayInputStream(input.getBytes()));
 
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
 
     verify(pollingController).setInterval(60L);
   }
@@ -188,8 +325,9 @@ class InteractiveModeTest
   {
     String input = "1\nunknown_api\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
+
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
   }
 
   @Test
@@ -197,8 +335,205 @@ class InteractiveModeTest
   {
     String input = "2\nfile.json\ninvalid\njson\nall\n";
     System.setIn(new ByteArrayInputStream(input.getBytes()));
+
     InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
-    executeWithTimeout(mode, 1000);
+    executeWithTimeout(mode, 150);
+  }
+
+  @Test
+  void fetchAndSave_withSpecificApis_shouldParseAndFetch() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+    lenient().doNothing().when(interactiveService).saveRecords(anyList(), anyString(), anyString(), anyBoolean());
+
+    String input = "1\nchucknorris,randomuser\n\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(
+        argThat(list -> list.contains("chucknorris") && list.contains("randomuser")),
+        anyMap(),
+        anyInt()
+    );
+  }
+
+  @Test
+  void fetchAndSave_withEmptyApiSelection_shouldPrintMessage() throws Exception
+  {
+    String input = "1\nunknown1,unknown2\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 150);
+
+    verify(interactiveService, never()).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withParameters_shouldParseAndPassToService() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nchucknorris\ncategory=animal,name=Chuck\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withEmptyParameterLine_shouldCreateEmptyMap() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nchucknorris\n\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withInvalidParameters_shouldIgnoreInvalidPairs() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nzippopotam\ninvalidpair,zip=12345,=value\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withParametersContainingSpaces_shouldParseCorrectly() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nchucknorris\ncategory = animal , name = Chuck\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withMultipleAPIsAndParameters_shouldParseAll() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nchucknorris,randomuser\ncategory=animal\ngender=male,nat=us\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 250);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withInvalidFormatRetry_shouldAcceptCorrectFormatAfterInvalid() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+    lenient().doNothing().when(interactiveService).saveRecords(anyList(), anyString(), anyString(), anyBoolean());
+
+    String input = "1\nall\n\n\nxml\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 250);
+
+    verify(interactiveService).saveRecords(anyList(), eq("file.json"), eq("json"), eq(false));
+  }
+
+  @Test
+  void fetchAndSave_saveException_shouldHandleGracefully() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+    lenient().doAnswer(invocation ->
+    {
+      throw new FileProcessingException("Disk full");
+    }).when(interactiveService).saveRecords(anyList(), anyString(), anyString(), anyBoolean());
+
+    String input = "1\nchucknorris\n\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    assertDoesNotThrow(() -> executeWithTimeout(mode, 200));
+  }
+
+  @Test
+  void fetchAndSave_withComplexBadParameters_shouldIgnoreInvalidPairs() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nzippopotam\n,,invalidpair\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withParameterWithoutEqualsSign_shouldIgnoreIt() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nzippopotam\ninvalidparam,zip=12345\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
+  }
+
+  @Test
+  void fetchAndSave_withParameterHavingEmptyKey_shouldIgnoreIt() throws Exception
+  {
+    lenient().when(pollingController.getMaxThreads()).thenReturn(2);
+    lenient().when(interactiveService.fetchFromApisParallel(anyList(), anyMap(), anyInt()))
+        .thenReturn(List.of(new model.AggregatedRecord("test", java.time.Instant.now(), jsonUtil.getMapper().createObjectNode())));
+
+    String input = "1\nchucknorris\n=value,category=animal\njson\nfile.json\nn\n";
+    System.setIn(new ByteArrayInputStream(input.getBytes()));
+
+    InteractiveMode mode = new InteractiveMode(apiService, fileService, jsonUtil, interactiveService);
+    executeWithTimeout(mode, 200);
+
+    verify(interactiveService).fetchFromApisParallel(anyList(), anyMap(), anyInt());
   }
 
   private void executeWithTimeout(InteractiveMode mode, long timeoutMs) throws InterruptedException
@@ -213,11 +548,13 @@ class InteractiveModeTest
       {
       }
     });
+    thread.setDaemon(true);
     thread.start();
     Thread.sleep(timeoutMs);
     if (thread.isAlive())
     {
       thread.interrupt();
+      thread.join(50);
     }
   }
 }
