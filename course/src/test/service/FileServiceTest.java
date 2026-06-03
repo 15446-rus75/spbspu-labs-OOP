@@ -235,7 +235,7 @@ class FileServiceTest
       "1,testApi\n" +
       "2,testApi,2024-01-01T00:00:00Z,value1\n";
     Files.writeString(file, csvContent);
-    setupMockClient("testApi"); // <-- ИСПРАВЛЕНИЕ: добавлен мок для testApi
+    setupMockClient("testApi");
 
     List< AggregatedRecord > records = fileService.readCsvRecords(file, apiServiceMock);
     assertEquals(1, records.size());
@@ -249,7 +249,7 @@ class FileServiceTest
       "1,testApi,invalid-date,value1\n" +
       "2,testApi,2024-01-01T00:00:00Z,value2\n";
     Files.writeString(file, csvContent);
-    setupMockClient("testApi"); // <-- ИСПРАВЛЕНИЕ: добавлен мок для testApi
+    setupMockClient("testApi");
 
     List< AggregatedRecord > records = fileService.readCsvRecords(file, apiServiceMock);
     assertEquals(1, records.size());
