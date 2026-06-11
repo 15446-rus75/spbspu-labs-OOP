@@ -55,7 +55,6 @@
       <version>${commons-cli.version}</version>
     </dependency>
 
-    <!-- Тестовые зависимости -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -95,7 +94,6 @@
           <source>17</source>
           <target>17</target>
           <encoding>UTF-8</encoding>
-          <!-- Исключаем тесты из компиляции основных исходников -->
           <excludes>
             <exclude>test/**/*.java</exclude>
           </excludes>
