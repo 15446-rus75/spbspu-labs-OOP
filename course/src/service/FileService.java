@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 public class FileService
 {
   private final JsonUtil jsonUtil;
-  // Синхронизация на уровне класса для гарантии атомарности операций чтения-записи файла
-  // при использовании нескольких экземпляров FileService в многопоточной среде
   private static final Object fileLock = new Object();
 
   public FileService(JsonUtil jsonUtil)

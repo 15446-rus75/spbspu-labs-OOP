@@ -7,17 +7,26 @@ import service.FileService;
 import service.InteractiveService;
 import util.JsonUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class InteractiveMode
 {
   private final InteractiveService interactiveService;
   private final ConsoleInputHandler inputHandler;
-  private final List< String > availableApis;
+  private final List<String> availableApis;
 
   public InteractiveMode(ApiService apiService, FileService fileService, JsonUtil jsonUtil)
   {
-    this.interactiveService = new InteractiveService(apiService, fileService, jsonUtil);
+    this(apiService, fileService, jsonUtil, null);
+  }
+
+  public InteractiveMode(ApiService apiService, FileService fileService, JsonUtil jsonUtil, InteractiveService interactiveService)
+  {
+    this.interactiveService = interactiveService != null ? interactiveService : new InteractiveService(apiService, fileService, jsonUtil);
     this.inputHandler = new ConsoleInputHandler();
     this.availableApis = apiService.getAvailableApiNames();
   }
@@ -54,7 +63,7 @@ public class InteractiveMode
     System.out.println("5. Остановить периодический опрос");
     System.out.println("6. Выход");
     System.out.println("Текущие настройки: задачи=" + interactiveService.getPollingController().getMaxThreads() +
-                       ", интервал=" + interactiveService.getPollingController().getInterval() + " сек");
+        ", интервал=" + interactiveService.getPollingController().getInterval() + " сек");
     if (interactiveService.getPollingController().isPolling())
     {
       System.out.println("** Опрос активен **");
@@ -65,7 +74,7 @@ public class InteractiveMode
   {
     System.out.println("Доступные API: " + availableApis);
     String chosen = inputHandler.readString("Введите названия API через запятую (или 'all' для всех): ");
-    List< String > apisToFetch;
+    List<String> apisToFetch;
     if (chosen.equalsIgnoreCase("all"))
     {
       apisToFetch = new ArrayList<>(availableApis);
@@ -73,17 +82,16 @@ public class InteractiveMode
     else
     {
       apisToFetch = Arrays.stream(chosen.split(","))
-                    .map(String::trim)
-                    .filter(availableApis::contains)
-                    .toList();
+          .map(String::trim)
+          .filter(availableApis::contains)
+          .toList();
       if (apisToFetch.isEmpty())
       {
         System.out.println("Не выбрано ни одного доступного API.");
         return;
       }
     }
-
-    Map< String, Map< String, String > > params = new HashMap<>();
+    Map<String, Map<String, String>> params = new HashMap<>();
     for (String api : apisToFetch)
     {
       System.out.println("Введите параметры для " + api);
@@ -91,7 +99,7 @@ public class InteractiveMode
       String paramLine = inputHandler.readString("");
       if (!paramLine.isBlank())
       {
-        Map< String, String > map = new HashMap<>();
+        Map<String, String> map = new HashMap<>();
         String[] pairs = paramLine.split(",");
         for (String pair : pairs)
         {
@@ -114,24 +122,20 @@ public class InteractiveMode
         params.put(api, map);
       }
     }
-
     int maxThreads = interactiveService.getPollingController().getMaxThreads();
-    List< AggregatedRecord > records = interactiveService.fetchFromApisParallel(apisToFetch, params, maxThreads);
+    List<AggregatedRecord> records = interactiveService.fetchFromApisParallel(apisToFetch, params, maxThreads);
     if (records.isEmpty())
     {
       System.out.println("Нет полученных данных.");
       return;
     }
-
     String format = inputHandler.readString("Формат файла (json/csv): ");
     while (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv"))
     {
       format = inputHandler.readString("Неверный формат. Введите json или csv: ");
     }
-
     String filePath = inputHandler.readString("Путь к файлу: ");
     boolean append = inputHandler.readBoolean("Дозаписать в существующий файл? (y/n): ");
-
     try
     {
       interactiveService.saveRecords(records, filePath, format, append);
@@ -212,10 +216,9 @@ public class InteractiveMode
       System.out.println("Интервал опроса не задан или равен 0. Настройте интервал в меню 3.");
       return;
     }
-
     System.out.println("Доступные API: " + availableApis);
     String chosen = inputHandler.readString("Введите названия API через запятую (или 'all' для всех): ");
-    List< String > apisToFetch;
+    List<String> apisToFetch;
     if (chosen.equalsIgnoreCase("all"))
     {
       apisToFetch = new ArrayList<>(availableApis);
@@ -223,17 +226,16 @@ public class InteractiveMode
     else
     {
       apisToFetch = Arrays.stream(chosen.split(","))
-                    .map(String::trim)
-                    .filter(availableApis::contains)
-                    .toList();
+          .map(String::trim)
+          .filter(availableApis::contains)
+          .toList();
       if (apisToFetch.isEmpty())
       {
         System.out.println("Не выбрано ни одного доступного API.");
         return;
       }
     }
-
-    Map< String, Map< String, String > > params = new HashMap<>();
+    Map<String, Map<String, String>> params = new HashMap<>();
     for (String api : apisToFetch)
     {
       System.out.println("Введите параметры для " + api);
@@ -241,7 +243,7 @@ public class InteractiveMode
       String paramLine = inputHandler.readString("");
       if (!paramLine.isBlank())
       {
-        Map< String, String > map = new HashMap<>();
+        Map<String, String> map = new HashMap<>();
         String[] pairs = paramLine.split(",");
         for (String pair : pairs)
         {
@@ -264,16 +266,13 @@ public class InteractiveMode
         params.put(api, map);
       }
     }
-
     String format = inputHandler.readString("Формат файла (json/csv): ");
     while (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv"))
     {
       format = inputHandler.readString("Неверный формат. Введите json или csv: ");
     }
-
     String filePath = inputHandler.readString("Путь к файлу: ");
     boolean append = inputHandler.readBoolean("Дозаписать в существующий файл? (y/n): ");
-
     interactiveService.getPollingController().startPolling(apisToFetch, params, format, filePath, append);
   }
 

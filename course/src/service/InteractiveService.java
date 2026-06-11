@@ -9,8 +9,16 @@ import util.JsonUtil;
 
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class InteractiveService
@@ -23,16 +31,21 @@ public class InteractiveService
 
   public InteractiveService(ApiService apiService, FileService fileService, JsonUtil jsonUtil)
   {
+    this(apiService, fileService, jsonUtil, null);
+  }
+
+  public InteractiveService(ApiService apiService, FileService fileService, JsonUtil jsonUtil, PollingController pollingController)
+  {
     this.apiService = apiService;
     this.fileService = fileService;
     this.printer = new DataPrinter();
     this.jsonUtil = jsonUtil;
-    this.pollingController = new PollingController(apiService, fileService);
+    this.pollingController = pollingController != null ? pollingController : new PollingController(apiService, fileService);
   }
 
   public void runAutoMode(String apisParam, String format, String outputFile, int maxThreads, long interval)
   {
-    List< String > apiNames;
+    List<String> apiNames;
     if (apisParam.equalsIgnoreCase("all"))
     {
       apiNames = apiService.getAvailableApiNames();
@@ -40,17 +53,16 @@ public class InteractiveService
     else
     {
       apiNames = Arrays.stream(apisParam.split(","))
-                .map(String::trim)
-                .filter(name -> apiService.getAvailableApiNames().contains(name))
-                .collect(Collectors.toList());
+          .map(String::trim)
+          .filter(name -> apiService.getAvailableApiNames().contains(name))
+          .collect(Collectors.toList());
     }
     if (apiNames.isEmpty())
     {
       System.out.println("Нет доступных API из списка: " + apisParam);
       return;
     }
-
-    Map< String, Map< String, String > > params = new HashMap<>();
+    Map<String, Map<String, String>> params = new HashMap<>();
     if (interval > 0)
     {
       pollingController.setMaxThreads(maxThreads);
@@ -68,13 +80,12 @@ public class InteractiveService
     }
     else
     {
-      List< AggregatedRecord > records = fetchFromApisParallel(apiNames, params, maxThreads);
+      List<AggregatedRecord> records = fetchFromApisParallel(apiNames, params, maxThreads);
       if (records.isEmpty())
       {
         System.out.println("Нет полученных данных.");
         return;
       }
-
       try
       {
         saveRecords(records, outputFile, format, false);
@@ -87,10 +98,10 @@ public class InteractiveService
     }
   }
 
-  public List< AggregatedRecord > fetchFromApisParallel(List< String > apiNames, Map< String, Map< String, String > > params, int maxThreads)
+  public List<AggregatedRecord> fetchFromApisParallel(List<String> apiNames, Map<String, Map<String, String>> params, int maxThreads)
   {
     ExecutorService executor = Executors.newFixedThreadPool(maxThreads);
-    List< Future< AggregatedRecord > > futures = new ArrayList<>();
+    List<Future<AggregatedRecord>> futures = new ArrayList<>();
     try
     {
       for (String name : apiNames)
@@ -101,8 +112,9 @@ public class InteractiveService
           System.err.println("Предупреждение: API '" + name + "' не найден");
           continue;
         }
-        Map< String, String > queryParams = params.getOrDefault(name, new HashMap<>());
-        futures.add(executor.submit(() -> {
+        Map<String, String> queryParams = params.getOrDefault(name, new HashMap<>());
+        futures.add(executor.submit(() ->
+        {
           try
           {
             ApiResponse response = client.fetchData(queryParams);
@@ -115,9 +127,8 @@ public class InteractiveService
           }
         }));
       }
-
-      List< AggregatedRecord > records = new ArrayList<>();
-      for (Future< AggregatedRecord > future : futures)
+      List<AggregatedRecord> records = new ArrayList<>();
+      for (Future<AggregatedRecord> future : futures)
       {
         try
         {
@@ -151,13 +162,13 @@ public class InteractiveService
     }
   }
 
-  public List< AggregatedRecord > fetchFromApis(List< String > apiNames, Map< String, Map< String, String > > params)
+  public List<AggregatedRecord> fetchFromApis(List<String> apiNames, Map<String, Map<String, String>> params)
   {
     return apiService.fetchDataFromApis(apiNames, params);
   }
 
-  public void saveRecords(List< AggregatedRecord > records, String filePath, String format, boolean append)
-            throws FileProcessingException
+  public void saveRecords(List<AggregatedRecord> records, String filePath, String format, boolean append)
+      throws FileProcessingException
   {
     var path = Paths.get(filePath);
     if ("json".equalsIgnoreCase(format))
@@ -166,7 +177,7 @@ public class InteractiveService
     }
     else if ("csv".equalsIgnoreCase(format))
     {
-      List< Map< String, Object > > flatRecords = new ArrayList<>();
+      List<Map<String, Object>> flatRecords = new ArrayList<>();
       for (AggregatedRecord record : records)
       {
         ApiClient client = apiService.getClient(record.getSource());
@@ -175,7 +186,7 @@ public class InteractiveService
           continue;
         }
         ApiResponse apiResponse = new ApiResponse(record.getSource(), record.getTimestamp(), record.getData());
-        Map< String, Object > flat = client.flattenResponse(apiResponse);
+        Map<String, Object> flat = client.flattenResponse(apiResponse);
         flat.put("id", record.getId());
         flat.put("source", record.getSource());
         flat.put("timestamp", record.getTimestamp().toString());
@@ -195,13 +206,13 @@ public class InteractiveService
     {
       if ("json".equalsIgnoreCase(format))
       {
-        List< AggregatedRecord > records = fileService.readRecords(filePath, format);
+        List<AggregatedRecord> records = fileService.readRecords(filePath, format);
         printRecords(records, sourceFilter);
       }
       else if ("csv".equalsIgnoreCase(format))
       {
         var path = Paths.get(filePath);
-        List< AggregatedRecord > records = fileService.readCsvRecords(path, apiService);
+        List<AggregatedRecord> records = fileService.readCsvRecords(path, apiService);
         printRecords(records, sourceFilter);
       }
       else
@@ -215,7 +226,7 @@ public class InteractiveService
     }
   }
 
-  private void printRecords(List< AggregatedRecord > records, String sourceFilter)
+  private void printRecords(List<AggregatedRecord> records, String sourceFilter)
   {
     if (sourceFilter == null)
     {

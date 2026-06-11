@@ -20,12 +20,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ApiClientTest
 {
-
   @Mock
   private HttpClientUtil httpClient;
 
@@ -71,7 +71,7 @@ class ApiClientTest
   @Test
   void chuckNorrisClient_fetchData_shouldReturnApiResponse() throws Exception
   {
-    String mockJson = "{\"id\":\"123\",\"value\":\"Chuck Norris joke\",\"created_at\":\"2020-01-01\",\"categories\":[],\"icon_url\":\"url\",\"updated_at\":\"2020-01-01\"}";
+    String mockJson = getChuckNorrisMockJson();
     when(httpClient.get(anyString())).thenReturn(mockJson);
 
     ChuckNorrisClient client = new ChuckNorrisClient(httpClient, jsonUtil);
@@ -103,7 +103,45 @@ class ApiClientTest
     root.set("results", mapper.createArrayNode().add(user));
 
     JsonNode extracted = client.extractData(root);
+
     assertEquals("male", extracted.path("gender").asText());
+  }
+
+  @Test
+  void randomUserClient_extractData_shouldReturnRootWhenNoResults()
+  {
+    RandomUserClient client = new RandomUserClient(httpClient, jsonUtil);
+    ObjectNode root = mapper.createObjectNode();
+    root.put("gender", "female");
+
+    JsonNode extracted = client.extractData(root);
+
+    assertSame(root, extracted);
+    assertEquals("female", extracted.path("gender").asText());
+  }
+
+  @Test
+  void randomUserClient_extractData_shouldReturnRootWhenResultsIsEmpty()
+  {
+    RandomUserClient client = new RandomUserClient(httpClient, jsonUtil);
+    ObjectNode root = mapper.createObjectNode();
+    root.set("results", mapper.createArrayNode());
+
+    JsonNode extracted = client.extractData(root);
+
+    assertSame(root, extracted);
+  }
+
+  @Test
+  void randomUserClient_extractData_shouldReturnRootWhenResultsIsNotArray()
+  {
+    RandomUserClient client = new RandomUserClient(httpClient, jsonUtil);
+    ObjectNode root = mapper.createObjectNode();
+    root.put("results", "not an array");
+
+    JsonNode extracted = client.extractData(root);
+
+    assertSame(root, extracted);
   }
 
   @Test
@@ -127,7 +165,7 @@ class ApiClientTest
   @Test
   void zipCodeClient_fetchData_shouldUseDefaultZipWhenNoParams() throws Exception
   {
-    String mockJson = "{\"post code\": \"90210\", \"country\": \"United States\", \"country abbreviation\": \"US\", \"places\": [{\"place name\":\"Beverly Hills\",\"state\":\"California\",\"state abbreviation\":\"CA\",\"latitude\":\"34.0901\",\"longitude\":\"-118.4065\"}]}";
+    String mockJson = getZipCodeMockJson();
     when(httpClient.get(contains("90210"))).thenReturn(mockJson);
 
     ZipCodeClient client = new ZipCodeClient(httpClient, jsonUtil);
@@ -155,49 +193,48 @@ class ApiClientTest
   @Test
   void allClients_unflatten_shouldRestoreJsonStructure() throws Exception
   {
-    testUnflattenForClient(new ChuckNorrisClient(httpClient, jsonUtil));
-    testUnflattenForClient(new RandomUserClient(httpClient, jsonUtil));
-    testUnflattenForClient(new ZipCodeClient(httpClient, jsonUtil));
+    testUnflattenForClient(new ChuckNorrisClient(httpClient, jsonUtil), "chucknorris", "id");
+    testUnflattenForClient(new RandomUserClient(httpClient, jsonUtil), "randomuser", "gender");
+    testUnflattenForClient(new ZipCodeClient(httpClient, jsonUtil), "zippopotam", "post code");
   }
 
-  private void testUnflattenForClient(ApiClient client) throws Exception
+  private void testUnflattenForClient(ApiClient client, String source, String expectedField) throws Exception
   {
-    String mockJson = getMockJsonForClient(client.getSourceName());
+    String mockJson = getMockJsonForClient(source);
     when(httpClient.get(anyString())).thenReturn(mockJson);
-    ApiResponse response = client.fetchData(new HashMap<>());
 
+    ApiResponse response = client.fetchData(new HashMap<>());
     Map<String, Object> flat = client.flattenResponse(response);
     JsonNode restored = client.unflatten(flat);
 
     assertNotNull(restored);
-    if (client.getSourceName().equals("chucknorris"))
-    {
-      assertEquals(response.getData().path("id").asText(), restored.path("id").asText());
-    }
-    else if (client.getSourceName().equals("randomuser"))
-    {
-      assertEquals(response.getData().path("gender").asText(), restored.path("gender").asText());
-    }
-    else if (client.getSourceName().equals("zippopotam"))
-    {
-      assertEquals(response.getData().path("post code").asText(), restored.path("post code").asText());
-    }
+    assertEquals(response.getData().path(expectedField).asText(), restored.path(expectedField).asText());
   }
 
   private String getMockJsonForClient(String source)
   {
     if ("chucknorris".equals(source))
     {
-      return "{\"id\":\"1\",\"value\":\"joke\",\"created_at\":\"2020-01-01\",\"categories\":[],\"icon_url\":\"url\",\"updated_at\":\"2020-01-01\"}";
+      return getChuckNorrisMockJson();
     }
     else if ("randomuser".equals(source))
     {
-      return "{\"results\":[{\"gender\":\"male\",\"name\":{\"title\":\"Mr\",\"first\":\"John\",\"last\":\"Doe\"},\"email\":\"john@example.com\",\"location\":{\"country\":\"USA\",\"city\":\"New York\"},\"phone\":\"123456\"}]}";
+      return "{\"results\":[{\"gender\": \"male\", \"name\": {\"title\": \"Mr\", \"first\": \"John\", \"last\": \"Doe\"}, \"email\": \"john@example.com\", \"location\": {\"country\": \"USA\", \"city\": \"New York\"}, \"phone\": \"123456\"}]}";
     }
     else if ("zippopotam".equals(source))
     {
-      return "{\"post code\":\"90210\",\"country\":\"United States\",\"country abbreviation\":\"US\",\"places\":[{\"place name\":\"Beverly Hills\",\"state\":\"California\",\"state abbreviation\":\"CA\",\"latitude\":\"34.0901\",\"longitude\":\"-118.4065\"}]}";
+      return getZipCodeMockJson();
     }
     return "{}";
+  }
+
+  private String getChuckNorrisMockJson()
+  {
+    return "{\"id\": \"123\", \"value\": \"Chuck Norris joke\", \"created_at\": \"2020-01-01\", \"categories\": [], \"icon_url\": \"url\", \"updated_at\": \"2020-01-01\"}";
+  }
+
+  private String getZipCodeMockJson()
+  {
+    return "{\"post code\": \"90210\", \"country\": \"United States\", \"country abbreviation\": \"US\", \"places\": [{\"place name\": \"Beverly Hills\", \"state\": \"California\", \"state abbreviation\": \"CA\", \"latitude\": \"34.0901\", \"longitude\": \"-118.4065\"}]}";
   }
 }
